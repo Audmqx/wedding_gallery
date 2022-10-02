@@ -1,0 +1,6720 @@
+var $parcel$global =
+typeof globalThis !== 'undefined'
+  ? globalThis
+  : typeof self !== 'undefined'
+  ? self
+  : typeof window !== 'undefined'
+  ? window
+  : typeof global !== 'undefined'
+  ? global
+  : {};
+var $parcel$modules = {};
+var $parcel$inits = {};
+
+var parcelRequire = $parcel$global["parcelRequire23b3"];
+if (parcelRequire == null) {
+  parcelRequire = function(id) {
+    if (id in $parcel$modules) {
+      return $parcel$modules[id].exports;
+    }
+    if (id in $parcel$inits) {
+      var init = $parcel$inits[id];
+      delete $parcel$inits[id];
+      var module = {id: id, exports: {}};
+      $parcel$modules[id] = module;
+      init.call(module.exports, module, module.exports);
+      return module.exports;
+    }
+    var err = new Error("Cannot find module '" + id + "'");
+    err.code = 'MODULE_NOT_FOUND';
+    throw err;
+  };
+
+  parcelRequire.register = function register(id, init) {
+    $parcel$inits[id] = init;
+  };
+
+  $parcel$global["parcelRequire23b3"] = parcelRequire;
+}
+parcelRequire.register("lyQvK", function(module, exports) {
+/**
+ * EvEmitter v2.1.1
+ * Lil' event emitter
+ * MIT License
+ */ (function(global, factory) {
+    // universal module definition
+    if (module.exports) // CommonJS - Browserify, Webpack
+    module.exports = factory();
+    else // Browser globals
+    global.EvEmitter = factory();
+})(typeof window != "undefined" ? window : module.exports, function() {
+    function EvEmitter() {}
+    let proto = EvEmitter.prototype;
+    proto.on = function(eventName, listener) {
+        if (!eventName || !listener) return this;
+        // set events hash
+        let events = this._events = this._events || {};
+        // set listeners array
+        let listeners = events[eventName] = events[eventName] || [];
+        // only add once
+        if (!listeners.includes(listener)) listeners.push(listener);
+        return this;
+    };
+    proto.once = function(eventName, listener) {
+        if (!eventName || !listener) return this;
+        // add event
+        this.on(eventName, listener);
+        // set once flag
+        // set onceEvents hash
+        let onceEvents = this._onceEvents = this._onceEvents || {};
+        // set onceListeners object
+        let onceListeners = onceEvents[eventName] = onceEvents[eventName] || {};
+        // set flag
+        onceListeners[listener] = true;
+        return this;
+    };
+    proto.off = function(eventName, listener) {
+        let listeners = this._events && this._events[eventName];
+        if (!listeners || !listeners.length) return this;
+        let index = listeners.indexOf(listener);
+        if (index != -1) listeners.splice(index, 1);
+        return this;
+    };
+    proto.emitEvent = function(eventName, args) {
+        let listeners = this._events && this._events[eventName];
+        if (!listeners || !listeners.length) return this;
+        // copy over to avoid interference if .off() in listener
+        listeners = listeners.slice(0);
+        args = args || [];
+        // once stuff
+        let onceListeners = this._onceEvents && this._onceEvents[eventName];
+        for (let listener of listeners){
+            let isOnce = onceListeners && onceListeners[listener];
+            if (isOnce) {
+                // remove listener
+                // remove before trigger to prevent recursion
+                this.off(eventName, listener);
+                // unset once flag
+                delete onceListeners[listener];
+            }
+            // trigger listener
+            listener.apply(this, args);
+        }
+        return this;
+    };
+    proto.allOff = function() {
+        delete this._events;
+        delete this._onceEvents;
+        return this;
+    };
+    return EvEmitter;
+});
+
+});
+
+var $e9c61d5fa3a52781$exports = {};
+
+/*!
+ * imagesLoaded v5.0.0
+ * JavaScript is all like "You images are done yet or what?"
+ * MIT License
+ */ (function(window1, factory) {
+    // universal module definition
+    if ($e9c61d5fa3a52781$exports) // CommonJS
+    $e9c61d5fa3a52781$exports = factory(window1, (parcelRequire("lyQvK")));
+    else // browser global
+    window1.imagesLoaded = factory(window1, window1.EvEmitter);
+})(typeof window !== "undefined" ? window : $e9c61d5fa3a52781$exports, function factory(window1, EvEmitter) {
+    let $ = window1.jQuery;
+    let console = window1.console;
+    // -------------------------- helpers -------------------------- //
+    // turn element or nodeList into an array
+    function makeArray(obj) {
+        // use object if already an array
+        if (Array.isArray(obj)) return obj;
+        let isArrayLike = typeof obj == "object" && typeof obj.length == "number";
+        // convert nodeList to array
+        if (isArrayLike) return [
+            ...obj
+        ];
+        // array of single index
+        return [
+            obj
+        ];
+    }
+    // -------------------------- imagesLoaded -------------------------- //
+    /**
+ * @param {[Array, Element, NodeList, String]} elem
+ * @param {[Object, Function]} options - if function, use as callback
+ * @param {Function} onAlways - callback function
+ * @returns {ImagesLoaded}
+ */ function ImagesLoaded(elem, options, onAlways) {
+        // coerce ImagesLoaded() without new, to be new ImagesLoaded()
+        if (!(this instanceof ImagesLoaded)) return new ImagesLoaded(elem, options, onAlways);
+        // use elem as selector string
+        let queryElem = elem;
+        if (typeof elem == "string") queryElem = document.querySelectorAll(elem);
+        // bail if bad element
+        if (!queryElem) {
+            console.error(`Bad element for imagesLoaded ${queryElem || elem}`);
+            return;
+        }
+        this.elements = makeArray(queryElem);
+        this.options = {};
+        // shift arguments if no options set
+        if (typeof options == "function") onAlways = options;
+        else Object.assign(this.options, options);
+        if (onAlways) this.on("always", onAlways);
+        this.getImages();
+        // add jQuery Deferred object
+        if ($) this.jqDeferred = new $.Deferred();
+        // HACK check async to allow time to bind listeners
+        setTimeout(this.check.bind(this));
+    }
+    ImagesLoaded.prototype = Object.create(EvEmitter.prototype);
+    ImagesLoaded.prototype.getImages = function() {
+        this.images = [];
+        // filter & find items if we have an item selector
+        this.elements.forEach(this.addElementImages, this);
+    };
+    const elementNodeTypes = [
+        1,
+        9,
+        11
+    ];
+    /**
+ * @param {Node} elem
+ */ ImagesLoaded.prototype.addElementImages = function(elem) {
+        // filter siblings
+        if (elem.nodeName === "IMG") this.addImage(elem);
+        // get background image on element
+        if (this.options.background === true) this.addElementBackgroundImages(elem);
+        // find children
+        // no non-element nodes, #143
+        let { nodeType: nodeType  } = elem;
+        if (!nodeType || !elementNodeTypes.includes(nodeType)) return;
+        let childImgs = elem.querySelectorAll("img");
+        // concat childElems to filterFound array
+        for (let img of childImgs)this.addImage(img);
+        // get child background images
+        if (typeof this.options.background == "string") {
+            let children = elem.querySelectorAll(this.options.background);
+            for (let child of children)this.addElementBackgroundImages(child);
+        }
+    };
+    const reURL = /url\((['"])?(.*?)\1\)/gi;
+    ImagesLoaded.prototype.addElementBackgroundImages = function(elem) {
+        let style = getComputedStyle(elem);
+        // Firefox returns null if in a hidden iframe https://bugzil.la/548397
+        if (!style) return;
+        // get url inside url("...")
+        let matches = reURL.exec(style.backgroundImage);
+        while(matches !== null){
+            let url = matches && matches[2];
+            if (url) this.addBackground(url, elem);
+            matches = reURL.exec(style.backgroundImage);
+        }
+    };
+    /**
+ * @param {Image} img
+ */ ImagesLoaded.prototype.addImage = function(img) {
+        let loadingImage = new LoadingImage(img);
+        this.images.push(loadingImage);
+    };
+    ImagesLoaded.prototype.addBackground = function(url, elem) {
+        let background = new Background(url, elem);
+        this.images.push(background);
+    };
+    ImagesLoaded.prototype.check = function() {
+        this.progressedCount = 0;
+        this.hasAnyBroken = false;
+        // complete if no images
+        if (!this.images.length) {
+            this.complete();
+            return;
+        }
+        /* eslint-disable-next-line func-style */ let onProgress = (image, elem, message)=>{
+            // HACK - Chrome triggers event before object properties have changed. #83
+            setTimeout(()=>{
+                this.progress(image, elem, message);
+            });
+        };
+        this.images.forEach(function(loadingImage) {
+            loadingImage.once("progress", onProgress);
+            loadingImage.check();
+        });
+    };
+    ImagesLoaded.prototype.progress = function(image, elem, message) {
+        this.progressedCount++;
+        this.hasAnyBroken = this.hasAnyBroken || !image.isLoaded;
+        // progress event
+        this.emitEvent("progress", [
+            this,
+            image,
+            elem
+        ]);
+        if (this.jqDeferred && this.jqDeferred.notify) this.jqDeferred.notify(this, image);
+        // check if completed
+        if (this.progressedCount === this.images.length) this.complete();
+        if (this.options.debug && console) console.log(`progress: ${message}`, image, elem);
+    };
+    ImagesLoaded.prototype.complete = function() {
+        let eventName = this.hasAnyBroken ? "fail" : "done";
+        this.isComplete = true;
+        this.emitEvent(eventName, [
+            this
+        ]);
+        this.emitEvent("always", [
+            this
+        ]);
+        if (this.jqDeferred) {
+            let jqMethod = this.hasAnyBroken ? "reject" : "resolve";
+            this.jqDeferred[jqMethod](this);
+        }
+    };
+    // --------------------------  -------------------------- //
+    function LoadingImage(img) {
+        this.img = img;
+    }
+    LoadingImage.prototype = Object.create(EvEmitter.prototype);
+    LoadingImage.prototype.check = function() {
+        // If complete is true and browser supports natural sizes,
+        // try to check for image status manually.
+        let isComplete = this.getIsImageComplete();
+        if (isComplete) {
+            // report based on naturalWidth
+            this.confirm(this.img.naturalWidth !== 0, "naturalWidth");
+            return;
+        }
+        // If none of the checks above matched, simulate loading on detached element.
+        this.proxyImage = new Image();
+        // add crossOrigin attribute. #204
+        if (this.img.crossOrigin) this.proxyImage.crossOrigin = this.img.crossOrigin;
+        this.proxyImage.addEventListener("load", this);
+        this.proxyImage.addEventListener("error", this);
+        // bind to image as well for Firefox. #191
+        this.img.addEventListener("load", this);
+        this.img.addEventListener("error", this);
+        this.proxyImage.src = this.img.currentSrc || this.img.src;
+    };
+    LoadingImage.prototype.getIsImageComplete = function() {
+        // check for non-zero, non-undefined naturalWidth
+        // fixes Safari+InfiniteScroll+Masonry bug infinite-scroll#671
+        return this.img.complete && this.img.naturalWidth;
+    };
+    LoadingImage.prototype.confirm = function(isLoaded, message) {
+        this.isLoaded = isLoaded;
+        let { parentNode: parentNode  } = this.img;
+        // emit progress with parent <picture> or self <img>
+        let elem = parentNode.nodeName === "PICTURE" ? parentNode : this.img;
+        this.emitEvent("progress", [
+            this,
+            elem,
+            message
+        ]);
+    };
+    // ----- events ----- //
+    // trigger specified handler for event type
+    LoadingImage.prototype.handleEvent = function(event) {
+        let method = "on" + event.type;
+        if (this[method]) this[method](event);
+    };
+    LoadingImage.prototype.onload = function() {
+        this.confirm(true, "onload");
+        this.unbindEvents();
+    };
+    LoadingImage.prototype.onerror = function() {
+        this.confirm(false, "onerror");
+        this.unbindEvents();
+    };
+    LoadingImage.prototype.unbindEvents = function() {
+        this.proxyImage.removeEventListener("load", this);
+        this.proxyImage.removeEventListener("error", this);
+        this.img.removeEventListener("load", this);
+        this.img.removeEventListener("error", this);
+    };
+    // -------------------------- Background -------------------------- //
+    function Background(url, element) {
+        this.url = url;
+        this.element = element;
+        this.img = new Image();
+    }
+    // inherit LoadingImage prototype
+    Background.prototype = Object.create(LoadingImage.prototype);
+    Background.prototype.check = function() {
+        this.img.addEventListener("load", this);
+        this.img.addEventListener("error", this);
+        this.img.src = this.url;
+        // check if image is already complete
+        let isComplete = this.getIsImageComplete();
+        if (isComplete) {
+            this.confirm(this.img.naturalWidth !== 0, "naturalWidth");
+            this.unbindEvents();
+        }
+    };
+    Background.prototype.unbindEvents = function() {
+        this.img.removeEventListener("load", this);
+        this.img.removeEventListener("error", this);
+    };
+    Background.prototype.confirm = function(isLoaded, message) {
+        this.isLoaded = isLoaded;
+        this.emitEvent("progress", [
+            this,
+            this.element,
+            message
+        ]);
+    };
+    // -------------------------- jQuery -------------------------- //
+    ImagesLoaded.makeJQueryPlugin = function(jQuery) {
+        jQuery = jQuery || window1.jQuery;
+        if (!jQuery) return;
+        // set local variable
+        $ = jQuery;
+        // $().imagesLoaded()
+        $.fn.imagesLoaded = function(options, onAlways) {
+            let instance = new ImagesLoaded(this, options, onAlways);
+            return instance.jqDeferred.promise($(this));
+        };
+    };
+    // try making plugin
+    ImagesLoaded.makeJQueryPlugin();
+    // --------------------------  -------------------------- //
+    return ImagesLoaded;
+});
+
+
+/**
+ * Preload images
+ * @param {String} selector - Selector/scope from where images need to be preloaded. Default is 'img'
+ */ const $8735ef69aff6d3c8$export$6b05b21262ec0515 = (selector = "img")=>{
+    return new Promise((resolve)=>{
+        $e9c61d5fa3a52781$exports(document.querySelectorAll(selector), {
+            background: true
+        }, resolve);
+    });
+};
+/**
+ * Wraps the elements of an array.
+ * @param {Array} arr - the array of elements to be wrapped
+ * @param {String} wrapType - the type of the wrap element ('div', 'span' etc)
+ * @param {String} wrapClass - the wrap class(es)
+ */ const $8735ef69aff6d3c8$export$fec9ba7939aa9b65 = (arr, wrapType, wrapClass)=>{
+    arr.forEach((el)=>{
+        const wrapEl = document.createElement(wrapType);
+        wrapEl.classList = wrapClass;
+        el.parentNode.appendChild(wrapEl);
+        wrapEl.appendChild(el);
+    });
+};
+
+
+function $3ea9bbd6f8ebed33$export$2e2bcd8739ae039(obj, key, value) {
+    if (key in obj) Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+    });
+    else obj[key] = value;
+    return obj;
+}
+
+
+/**
+ * Class representing a Trail element, 
+ * an element that has [trailElems] children/clones (of type image or text) 
+ * and that we can use to stagger it's translation so it looks like a trail or dragging effect 
+ */ class $a8fca88873a386d6$var$Trail {
+    /**
+	 * Constructor.
+	 * @param {Element} DOM_el - the .trail element
+	 */ constructor(DOM_el, options){
+        // DOM elements
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "DOM", {
+            // Main element (.trail)
+            el: null,
+            // Trail child elements (.trail__img or .trail__text)
+            trailElems: null
+        });
+        // option defaults
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "defaults", {
+            // 3d
+            perspective: false,
+            // Total number of inner image elements
+            totalTrailElements: 4
+        });
+        this.DOM.el = DOM_el;
+        this.options = Object.assign(this.defaults, options);
+        // 3d
+        if (this.options.perspective) this.DOM.el.style.perspective = `${this.options.perspective}px`;
+    }
+}
+class $a8fca88873a386d6$export$c3ddc7f2aba2c1ae extends $a8fca88873a386d6$var$Trail {
+    /**
+	 * Creates the HTML markup for the trail elements
+	 */ layout() {
+        // Remove the background image from the main element
+        this.DOM.el.style.backgroundImage = "none";
+        let innerHTML = "";
+        for(let i = 0; i <= this.options.totalTrailElements - 1; ++i){
+            const opacityVal = i === this.options.totalTrailElements - 1 ? 1 : 0.8; //1/this.options.totalTrailElements * i + 1/this.options.totalTrailElements
+            innerHTML += `<img class="trail__img" src="${this.bgImage}" style="opacity: ${opacityVal}"/>`;
+        }
+        // Append to the main element
+        this.DOM.el.innerHTML = innerHTML;
+        // Get inner .trail__img elements
+        this.DOM.trailElems = this.DOM.el.querySelectorAll(".trail__img");
+        this.DOM.el.classList.add("trail");
+    }
+    reset() {
+        this.DOM.el.classList.remove("trail");
+        this.DOM.el.style.backgroundImage = `url(${this.bgImage})`;
+        this.DOM.el.innerHTML = "";
+        if (this.options.perspective) this.DOM.el.style.perspective = "none";
+    }
+    /**
+	 * Constructor.
+	 * @param {Element} DOM_el - the .trail element
+	 */ constructor(DOM_el, options){
+        super(DOM_el, options);
+        // the image path
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "bgImage", void 0);
+        // Get the main element's background image url 
+        this.bgImage = /(?:\(['"]?)(.*?)(?:['"]?\))/.exec(this.DOM.el.style.backgroundImage)[1];
+        // Create the HTML markup for the trail elements
+        this.layout();
+    }
+}
+class $a8fca88873a386d6$export$c42441291b8467f9 extends $a8fca88873a386d6$var$Trail {
+    /**
+	 * Creates the HTML markup for the trail elements
+	 */ layout() {
+        // Get the main element's innerHTML
+        this.content = this.DOM.el.innerHTML;
+        let innerHTML = "";
+        for(let i = 0; i <= this.options.totalTrailElements - 1; ++i){
+            const opacityVal = i === this.options.totalTrailElements - 1 ? 1 : 1 / this.options.totalTrailElements * i + 1 / this.options.totalTrailElements;
+            innerHTML += `<span class="trail__text" style="opacity: ${opacityVal}">${this.content}</span>`;
+        }
+        // Append to the main element
+        this.DOM.el.innerHTML = innerHTML;
+        // Get inner .trail__text elements
+        this.DOM.trailElems = this.DOM.el.querySelectorAll(".trail__text");
+        this.DOM.el.classList.add("trail");
+    }
+    reset() {
+        this.DOM.el.classList.remove("trail");
+        this.DOM.el.innerHTML = this.content;
+        if (this.options.perspective) this.DOM.el.style.perspective = "none";
+    }
+    /**
+	 * Constructor.
+	 * @param {Element} DOM_el - the .trail element
+	 */ constructor(DOM_el, options){
+        super(DOM_el, options);
+        // Create the HTML markup for the trail elements
+        this.layout();
+    }
+}
+
+
+
+function $eef254727dd68eca$var$_assertThisInitialized(self) {
+    if (self === void 0) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    return self;
+}
+function $eef254727dd68eca$var$_inheritsLoose(subClass, superClass) {
+    subClass.prototype = Object.create(superClass.prototype);
+    subClass.prototype.constructor = subClass;
+    subClass.__proto__ = superClass;
+}
+/*!
+ * GSAP 3.11.2
+ * https://greensock.com
+ *
+ * @license Copyright 2008-2022, GreenSock. All rights reserved.
+ * Subject to the terms at https://greensock.com/standard-license or for
+ * Club GreenSock members, the agreement issued with that membership.
+ * @author: Jack Doyle, jack@greensock.com
+*/ /* eslint-disable */ var $eef254727dd68eca$export$4922bee768729a77 = {
+    autoSleep: 120,
+    force3D: "auto",
+    nullTargetWarn: 1,
+    units: {
+        lineHeight: ""
+    }
+}, $eef254727dd68eca$var$_defaults = {
+    duration: .5,
+    overwrite: false,
+    delay: 0
+}, $eef254727dd68eca$var$_suppressOverwrites, $eef254727dd68eca$var$_reverting, $eef254727dd68eca$var$_context, $eef254727dd68eca$var$_bigNum = 1e8, $eef254727dd68eca$var$_tinyNum = 1 / $eef254727dd68eca$var$_bigNum, $eef254727dd68eca$var$_2PI = Math.PI * 2, $eef254727dd68eca$var$_HALF_PI = $eef254727dd68eca$var$_2PI / 4, $eef254727dd68eca$var$_gsID = 0, $eef254727dd68eca$var$_sqrt = Math.sqrt, $eef254727dd68eca$var$_cos = Math.cos, $eef254727dd68eca$var$_sin = Math.sin, $eef254727dd68eca$export$f664476fd67145ca = function _isString(value) {
+    return typeof value === "string";
+}, $eef254727dd68eca$var$_isFunction = function _isFunction(value) {
+    return typeof value === "function";
+}, $eef254727dd68eca$var$_isNumber = function _isNumber(value) {
+    return typeof value === "number";
+}, $eef254727dd68eca$export$a8178c063a9fd3a1 = function _isUndefined(value) {
+    return typeof value === "undefined";
+}, $eef254727dd68eca$var$_isObject = function _isObject(value) {
+    return typeof value === "object";
+}, $eef254727dd68eca$var$_isNotFalse = function _isNotFalse(value) {
+    return value !== false;
+}, $eef254727dd68eca$var$_windowExists = function _windowExists() {
+    return typeof window !== "undefined";
+}, $eef254727dd68eca$var$_isFuncOrString = function _isFuncOrString(value) {
+    return $eef254727dd68eca$var$_isFunction(value) || $eef254727dd68eca$export$f664476fd67145ca(value);
+}, $eef254727dd68eca$var$_isTypedArray = typeof ArrayBuffer === "function" && ArrayBuffer.isView || function() {}, // note: IE10 has ArrayBuffer, but NOT ArrayBuffer.isView().
+$eef254727dd68eca$var$_isArray = Array.isArray, $eef254727dd68eca$var$_strictNumExp = /(?:-?\.?\d|\.)+/gi, //only numbers (including negatives and decimals) but NOT relative values.
+$eef254727dd68eca$export$b9d44bb6523120d6 = /[-+=.]*\d+[.e\-+]*\d*[e\-+]*\d*/g, //finds any numbers, including ones that start with += or -=, negative numbers, and ones in scientific notation like 1e-8.
+$eef254727dd68eca$export$65c88bbd597e7b0a = /[-+=.]*\d+[.e-]*\d*[a-z%]*/g, $eef254727dd68eca$var$_complexStringNumExp = /[-+=.]*\d+\.?\d*(?:e-|e\+)?\d*/gi, //duplicate so that while we're looping through matches from exec(), it doesn't contaminate the lastIndex of _numExp which we use to search for colors too.
+$eef254727dd68eca$export$5a680e28b0b61bc = /[+-]=-?[.\d]+/, $eef254727dd68eca$var$_delimitedValueExp = /[^,'"\[\]\s]+/gi, // previously /[#\-+.]*\b[a-z\d\-=+%.]+/gi but didn't catch special characters.
+$eef254727dd68eca$var$_unitExp = /^[+\-=e\s\d]*\d+[.\d]*([a-z]*|%)\s*$/i, $eef254727dd68eca$var$_globalTimeline, $eef254727dd68eca$var$_win, $eef254727dd68eca$var$_coreInitted, $eef254727dd68eca$var$_doc, $eef254727dd68eca$var$_globals = {}, $eef254727dd68eca$var$_installScope = {}, $eef254727dd68eca$var$_coreReady, $eef254727dd68eca$var$_install = function _install(scope) {
+    return ($eef254727dd68eca$var$_installScope = $eef254727dd68eca$var$_merge(scope, $eef254727dd68eca$var$_globals)) && $eef254727dd68eca$export$99ee26438460406a;
+}, $eef254727dd68eca$export$7fb54635790b59a5 = function _missingPlugin(property, value) {
+    return console.warn("Invalid property", property, "set to", value, "Missing plugin? gsap.registerPlugin()");
+}, $eef254727dd68eca$var$_warn = function _warn(message, suppress) {
+    return !suppress && console.warn(message);
+}, $eef254727dd68eca$var$_addGlobal = function _addGlobal(name, obj) {
+    return name && ($eef254727dd68eca$var$_globals[name] = obj) && $eef254727dd68eca$var$_installScope && ($eef254727dd68eca$var$_installScope[name] = obj) || $eef254727dd68eca$var$_globals;
+}, $eef254727dd68eca$var$_emptyFunc = function _emptyFunc() {
+    return 0;
+}, $eef254727dd68eca$var$_startAtRevertConfig = {
+    suppressEvents: true,
+    isStart: true,
+    kill: false
+}, $eef254727dd68eca$var$_revertConfigNoKill = {
+    suppressEvents: true,
+    kill: false
+}, $eef254727dd68eca$var$_revertConfig = {
+    suppressEvents: true
+}, $eef254727dd68eca$var$_reservedProps = {}, $eef254727dd68eca$var$_lazyTweens = [], $eef254727dd68eca$var$_lazyLookup = {}, $eef254727dd68eca$var$_lastRenderedFrame, $eef254727dd68eca$export$d305d8ec5d7c26b8 = {}, $eef254727dd68eca$var$_effects = {}, $eef254727dd68eca$var$_nextGCFrame = 30, $eef254727dd68eca$var$_harnessPlugins = [], $eef254727dd68eca$var$_callbackNames = "", $eef254727dd68eca$var$_harness = function _harness(targets) {
+    var target = targets[0], harnessPlugin, i;
+    $eef254727dd68eca$var$_isObject(target) || $eef254727dd68eca$var$_isFunction(target) || (targets = [
+        targets
+    ]);
+    if (!(harnessPlugin = (target._gsap || {}).harness)) {
+        // find the first target with a harness. We assume targets passed into an animation will be of similar type, meaning the same kind of harness can be used for them all (performance optimization)
+        i = $eef254727dd68eca$var$_harnessPlugins.length;
+        while((i--) && !$eef254727dd68eca$var$_harnessPlugins[i].targetTest(target));
+        harnessPlugin = $eef254727dd68eca$var$_harnessPlugins[i];
+    }
+    i = targets.length;
+    while(i--)targets[i] && (targets[i]._gsap || (targets[i]._gsap = new $eef254727dd68eca$export$cf10981d5419cad5(targets[i], harnessPlugin))) || targets.splice(i, 1);
+    return targets;
+}, $eef254727dd68eca$export$8b9be379d2de2a39 = function _getCache(target) {
+    return target._gsap || $eef254727dd68eca$var$_harness($eef254727dd68eca$export$45b10814cc054894(target))[0]._gsap;
+}, $eef254727dd68eca$export$51d6bbe898aef1f9 = function _getProperty(target, property, v) {
+    return (v = target[property]) && $eef254727dd68eca$var$_isFunction(v) ? target[property]() : $eef254727dd68eca$export$a8178c063a9fd3a1(v) && target.getAttribute && target.getAttribute(property) || v;
+}, $eef254727dd68eca$export$f9000b814859f126 = function _forEachName(names, func) {
+    return (names = names.split(",")).forEach(func) || names;
+}, //split a comma-delimited list of names into an array, then run a forEach() function and return the split array (this is just a way to consolidate/shorten some code).
+$eef254727dd68eca$export$9c8d725d65e13f94 = function _round(value) {
+    return Math.round(value * 100000) / 100000 || 0;
+}, $eef254727dd68eca$var$_roundPrecise = function _roundPrecise(value) {
+    return Math.round(value * 10000000) / 10000000 || 0;
+}, // increased precision mostly for timing values.
+$eef254727dd68eca$export$dac762bc6301b560 = function _parseRelative(start, value) {
+    var operator = value.charAt(0), end = parseFloat(value.substr(2));
+    start = parseFloat(start);
+    return operator === "+" ? start + end : operator === "-" ? start - end : operator === "*" ? start * end : start / end;
+}, $eef254727dd68eca$var$_arrayContainsAny = function _arrayContainsAny(toSearch, toFind) {
+    //searches one array to find matches for any of the items in the toFind array. As soon as one is found, it returns true. It does NOT return all the matches; it's simply a boolean search.
+    var l = toFind.length, i = 0;
+    for(; toSearch.indexOf(toFind[i]) < 0 && ++i < l;);
+    return i < l;
+}, $eef254727dd68eca$var$_lazyRender = function _lazyRender() {
+    var l = $eef254727dd68eca$var$_lazyTweens.length, a = $eef254727dd68eca$var$_lazyTweens.slice(0), i, tween;
+    $eef254727dd68eca$var$_lazyLookup = {};
+    $eef254727dd68eca$var$_lazyTweens.length = 0;
+    for(i = 0; i < l; i++){
+        tween = a[i];
+        tween && tween._lazy && (tween.render(tween._lazy[0], tween._lazy[1], true)._lazy = 0);
+    }
+}, $eef254727dd68eca$var$_lazySafeRender = function _lazySafeRender(animation, time, suppressEvents, force) {
+    $eef254727dd68eca$var$_lazyTweens.length && $eef254727dd68eca$var$_lazyRender();
+    animation.render(time, suppressEvents, force || $eef254727dd68eca$var$_reverting && time < 0 && (animation._initted || animation._startAt));
+    $eef254727dd68eca$var$_lazyTweens.length && $eef254727dd68eca$var$_lazyRender(); //in case rendering caused any tweens to lazy-init, we should render them because typically when someone calls seek() or time() or progress(), they expect an immediate render.
+}, $eef254727dd68eca$var$_numericIfPossible = function _numericIfPossible(value) {
+    var n = parseFloat(value);
+    return (n || n === 0) && (value + "").match($eef254727dd68eca$var$_delimitedValueExp).length < 2 ? n : $eef254727dd68eca$export$f664476fd67145ca(value) ? value.trim() : value;
+}, $eef254727dd68eca$var$_passThrough = function _passThrough(p) {
+    return p;
+}, $eef254727dd68eca$export$dc2b19673bb53610 = function _setDefaults(obj, defaults) {
+    for(var p in defaults)p in obj || (obj[p] = defaults[p]);
+    return obj;
+}, $eef254727dd68eca$var$_setKeyframeDefaults = function _setKeyframeDefaults(excludeDuration) {
+    return function(obj, defaults) {
+        for(var p in defaults)p in obj || p === "duration" && excludeDuration || p === "ease" || (obj[p] = defaults[p]);
+    };
+}, $eef254727dd68eca$var$_merge = function _merge(base, toMerge) {
+    for(var p in toMerge)base[p] = toMerge[p];
+    return base;
+}, $eef254727dd68eca$var$_mergeDeep = function _mergeDeep(base, toMerge) {
+    for(var p in toMerge)p !== "__proto__" && p !== "constructor" && p !== "prototype" && (base[p] = $eef254727dd68eca$var$_isObject(toMerge[p]) ? _mergeDeep(base[p] || (base[p] = {}), toMerge[p]) : toMerge[p]);
+    return base;
+}, $eef254727dd68eca$var$_copyExcluding = function _copyExcluding(obj, excluding) {
+    var copy = {}, p;
+    for(p in obj)p in excluding || (copy[p] = obj[p]);
+    return copy;
+}, $eef254727dd68eca$var$_inheritDefaults = function _inheritDefaults(vars) {
+    var parent = vars.parent || $eef254727dd68eca$var$_globalTimeline, func = vars.keyframes ? $eef254727dd68eca$var$_setKeyframeDefaults($eef254727dd68eca$var$_isArray(vars.keyframes)) : $eef254727dd68eca$export$dc2b19673bb53610;
+    if ($eef254727dd68eca$var$_isNotFalse(vars.inherit)) while(parent){
+        func(vars, parent.vars.defaults);
+        parent = parent.parent || parent._dp;
+    }
+    return vars;
+}, $eef254727dd68eca$var$_arraysMatch = function _arraysMatch(a1, a2) {
+    var i = a1.length, match = i === a2.length;
+    while(match && i-- && a1[i] === a2[i]);
+    return i < 0;
+}, $eef254727dd68eca$var$_addLinkedListItem = function _addLinkedListItem(parent, child, firstProp, lastProp, sortBy) {
+    if (firstProp === void 0) firstProp = "_first";
+    if (lastProp === void 0) lastProp = "_last";
+    var prev = parent[lastProp], t;
+    if (sortBy) {
+        t = child[sortBy];
+        while(prev && prev[sortBy] > t)prev = prev._prev;
+    }
+    if (prev) {
+        child._next = prev._next;
+        prev._next = child;
+    } else {
+        child._next = parent[firstProp];
+        parent[firstProp] = child;
+    }
+    if (child._next) child._next._prev = child;
+    else parent[lastProp] = child;
+    child._prev = prev;
+    child.parent = child._dp = parent;
+    return child;
+}, $eef254727dd68eca$export$cd008aa6cd8844e3 = function _removeLinkedListItem(parent, child, firstProp, lastProp) {
+    if (firstProp === void 0) firstProp = "_first";
+    if (lastProp === void 0) lastProp = "_last";
+    var prev = child._prev, next = child._next;
+    if (prev) prev._next = next;
+    else if (parent[firstProp] === child) parent[firstProp] = next;
+    if (next) next._prev = prev;
+    else if (parent[lastProp] === child) parent[lastProp] = prev;
+    child._next = child._prev = child.parent = null; // don't delete the _dp just so we can revert if necessary. But parent should be null to indicate the item isn't in a linked list.
+}, $eef254727dd68eca$var$_removeFromParent = function _removeFromParent(child, onlyIfParentHasAutoRemove) {
+    child.parent && (!onlyIfParentHasAutoRemove || child.parent.autoRemoveChildren) && child.parent.remove(child);
+    child._act = 0;
+}, $eef254727dd68eca$var$_uncache = function _uncache(animation, child) {
+    if (animation && (!child || child._end > animation._dur || child._start < 0)) {
+        // performance optimization: if a child animation is passed in we should only uncache if that child EXTENDS the animation (its end time is beyond the end)
+        var a = animation;
+        while(a){
+            a._dirty = 1;
+            a = a.parent;
+        }
+    }
+    return animation;
+}, $eef254727dd68eca$var$_recacheAncestors = function _recacheAncestors(animation) {
+    var parent = animation.parent;
+    while(parent && parent.parent){
+        //sometimes we must force a re-sort of all children and update the duration/totalDuration of all ancestor timelines immediately in case, for example, in the middle of a render loop, one tween alters another tween's timeScale which shoves its startTime before 0, forcing the parent timeline to shift around and shiftChildren() which could affect that next tween's render (startTime). Doesn't matter for the root timeline though.
+        parent._dirty = 1;
+        parent.totalDuration();
+        parent = parent.parent;
+    }
+    return animation;
+}, $eef254727dd68eca$var$_rewindStartAt = function _rewindStartAt(tween, totalTime, suppressEvents, force) {
+    return tween._startAt && ($eef254727dd68eca$var$_reverting ? tween._startAt.revert($eef254727dd68eca$var$_revertConfigNoKill) : tween.vars.immediateRender && !tween.vars.autoRevert || tween._startAt.render(totalTime, true, force));
+}, $eef254727dd68eca$var$_hasNoPausedAncestors = function _hasNoPausedAncestors(animation) {
+    return !animation || animation._ts && _hasNoPausedAncestors(animation.parent);
+}, $eef254727dd68eca$var$_elapsedCycleDuration = function _elapsedCycleDuration(animation) {
+    return animation._repeat ? $eef254727dd68eca$var$_animationCycle(animation._tTime, animation = animation.duration() + animation._rDelay) * animation : 0;
+}, // feed in the totalTime and cycleDuration and it'll return the cycle (iteration minus 1) and if the playhead is exactly at the very END, it will NOT bump up to the next cycle.
+$eef254727dd68eca$var$_animationCycle = function _animationCycle(tTime, cycleDuration) {
+    var whole = Math.floor(tTime /= cycleDuration);
+    return tTime && whole === tTime ? whole - 1 : whole;
+}, $eef254727dd68eca$var$_parentToChildTotalTime = function _parentToChildTotalTime(parentTime, child) {
+    return (parentTime - child._start) * child._ts + (child._ts >= 0 ? 0 : child._dirty ? child.totalDuration() : child._tDur);
+}, $eef254727dd68eca$var$_setEnd = function _setEnd(animation) {
+    return animation._end = $eef254727dd68eca$var$_roundPrecise(animation._start + (animation._tDur / Math.abs(animation._ts || animation._rts || $eef254727dd68eca$var$_tinyNum) || 0));
+}, $eef254727dd68eca$var$_alignPlayhead = function _alignPlayhead(animation, totalTime) {
+    // adjusts the animation's _start and _end according to the provided totalTime (only if the parent's smoothChildTiming is true and the animation isn't paused). It doesn't do any rendering or forcing things back into parent timelines, etc. - that's what totalTime() is for.
+    var parent = animation._dp;
+    if (parent && parent.smoothChildTiming && animation._ts) {
+        animation._start = $eef254727dd68eca$var$_roundPrecise(parent._time - (animation._ts > 0 ? totalTime / animation._ts : ((animation._dirty ? animation.totalDuration() : animation._tDur) - totalTime) / -animation._ts));
+        $eef254727dd68eca$var$_setEnd(animation);
+        parent._dirty || $eef254727dd68eca$var$_uncache(parent, animation); //for performance improvement. If the parent's cache is already dirty, it already took care of marking the ancestors as dirty too, so skip the function call here.
+    }
+    return animation;
+}, /*
+_totalTimeToTime = (clampedTotalTime, duration, repeat, repeatDelay, yoyo) => {
+	let cycleDuration = duration + repeatDelay,
+		time = _round(clampedTotalTime % cycleDuration);
+	if (time > duration) {
+		time = duration;
+	}
+	return (yoyo && (~~(clampedTotalTime / cycleDuration) & 1)) ? duration - time : time;
+},
+*/ $eef254727dd68eca$var$_postAddChecks = function _postAddChecks(timeline, child) {
+    var t;
+    if (child._time || child._initted && !child._dur) {
+        //in case, for example, the _start is moved on a tween that has already rendered. Imagine it's at its end state, then the startTime is moved WAY later (after the end of this timeline), it should render at its beginning.
+        t = $eef254727dd68eca$var$_parentToChildTotalTime(timeline.rawTime(), child);
+        if (!child._dur || $eef254727dd68eca$var$_clamp(0, child.totalDuration(), t) - child._tTime > $eef254727dd68eca$var$_tinyNum) child.render(t, true);
+    } //if the timeline has already ended but the inserted tween/timeline extends the duration, we should enable this timeline again so that it renders properly. We should also align the playhead with the parent timeline's when appropriate.
+    if ($eef254727dd68eca$var$_uncache(timeline, child)._dp && timeline._initted && timeline._time >= timeline._dur && timeline._ts) {
+        //in case any of the ancestors had completed but should now be enabled...
+        if (timeline._dur < timeline.duration()) {
+            t = timeline;
+            while(t._dp){
+                t.rawTime() >= 0 && t.totalTime(t._tTime); //moves the timeline (shifts its startTime) if necessary, and also enables it. If it's currently zero, though, it may not be scheduled to render until later so there's no need to force it to align with the current playhead position. Only move to catch up with the playhead.
+                t = t._dp;
+            }
+        }
+        timeline._zTime = -$eef254727dd68eca$var$_tinyNum; // helps ensure that the next render() will be forced (crossingStart = true in render()), even if the duration hasn't changed (we're adding a child which would need to get rendered). Definitely an edge case. Note: we MUST do this AFTER the loop above where the totalTime() might trigger a render() because this _addToTimeline() method gets called from the Animation constructor, BEFORE tweens even record their targets, etc. so we wouldn't want things to get triggered in the wrong order.
+    }
+}, $eef254727dd68eca$var$_addToTimeline = function _addToTimeline(timeline, child, position, skipChecks) {
+    child.parent && $eef254727dd68eca$var$_removeFromParent(child);
+    child._start = $eef254727dd68eca$var$_roundPrecise(($eef254727dd68eca$var$_isNumber(position) ? position : position || timeline !== $eef254727dd68eca$var$_globalTimeline ? $eef254727dd68eca$var$_parsePosition(timeline, position, child) : timeline._time) + child._delay);
+    child._end = $eef254727dd68eca$var$_roundPrecise(child._start + (child.totalDuration() / Math.abs(child.timeScale()) || 0));
+    $eef254727dd68eca$var$_addLinkedListItem(timeline, child, "_first", "_last", timeline._sort ? "_start" : 0);
+    $eef254727dd68eca$var$_isFromOrFromStart(child) || (timeline._recent = child);
+    skipChecks || $eef254727dd68eca$var$_postAddChecks(timeline, child);
+    timeline._ts < 0 && $eef254727dd68eca$var$_alignPlayhead(timeline, timeline._tTime); // if the timeline is reversed and the new child makes it longer, we may need to adjust the parent's _start (push it back)
+    return timeline;
+}, $eef254727dd68eca$var$_scrollTrigger = function _scrollTrigger(animation, trigger) {
+    return ($eef254727dd68eca$var$_globals.ScrollTrigger || $eef254727dd68eca$export$7fb54635790b59a5("scrollTrigger", trigger)) && $eef254727dd68eca$var$_globals.ScrollTrigger.create(trigger, animation);
+}, $eef254727dd68eca$var$_attemptInitTween = function _attemptInitTween(tween, time, force, suppressEvents, tTime) {
+    $eef254727dd68eca$var$_initTween(tween, time, tTime);
+    if (!tween._initted) return 1;
+    if (!force && tween._pt && !$eef254727dd68eca$var$_reverting && (tween._dur && tween.vars.lazy !== false || !tween._dur && tween.vars.lazy) && $eef254727dd68eca$var$_lastRenderedFrame !== $eef254727dd68eca$export$762ed8fbedb691e3.frame) {
+        $eef254727dd68eca$var$_lazyTweens.push(tween);
+        tween._lazy = [
+            tTime,
+            suppressEvents
+        ];
+        return 1;
+    }
+}, $eef254727dd68eca$var$_parentPlayheadIsBeforeStart = function _parentPlayheadIsBeforeStart(_ref) {
+    var parent = _ref.parent;
+    return parent && parent._ts && parent._initted && !parent._lock && (parent.rawTime() < 0 || _parentPlayheadIsBeforeStart(parent));
+}, // check parent's _lock because when a timeline repeats/yoyos and does its artificial wrapping, we shouldn't force the ratio back to 0
+$eef254727dd68eca$var$_isFromOrFromStart = function _isFromOrFromStart(_ref2) {
+    var data = _ref2.data;
+    return data === "isFromStart" || data === "isStart";
+}, $eef254727dd68eca$var$_renderZeroDurationTween = function _renderZeroDurationTween(tween, totalTime, suppressEvents, force) {
+    var prevRatio = tween.ratio, ratio = totalTime < 0 || !totalTime && (!tween._start && $eef254727dd68eca$var$_parentPlayheadIsBeforeStart(tween) && !(!tween._initted && $eef254727dd68eca$var$_isFromOrFromStart(tween)) || (tween._ts < 0 || tween._dp._ts < 0) && !$eef254727dd68eca$var$_isFromOrFromStart(tween)) ? 0 : 1, // if the tween or its parent is reversed and the totalTime is 0, we should go to a ratio of 0. Edge case: if a from() or fromTo() stagger tween is placed later in a timeline, the "startAt" zero-duration tween could initially render at a time when the parent timeline's playhead is technically BEFORE where this tween is, so make sure that any "from" and "fromTo" startAt tweens are rendered the first time at a ratio of 1.
+    repeatDelay = tween._rDelay, tTime = 0, pt, iteration, prevIteration;
+    if (repeatDelay && tween._repeat) {
+        // in case there's a zero-duration tween that has a repeat with a repeatDelay
+        tTime = $eef254727dd68eca$var$_clamp(0, tween._tDur, totalTime);
+        iteration = $eef254727dd68eca$var$_animationCycle(tTime, repeatDelay);
+        tween._yoyo && iteration & 1 && (ratio = 1 - ratio);
+        if (iteration !== $eef254727dd68eca$var$_animationCycle(tween._tTime, repeatDelay)) {
+            // if iteration changed
+            prevRatio = 1 - ratio;
+            tween.vars.repeatRefresh && tween._initted && tween.invalidate();
+        }
+    }
+    if (ratio !== prevRatio || $eef254727dd68eca$var$_reverting || force || tween._zTime === $eef254727dd68eca$var$_tinyNum || !totalTime && tween._zTime) {
+        if (!tween._initted && $eef254727dd68eca$var$_attemptInitTween(tween, totalTime, force, suppressEvents, tTime)) // if we render the very beginning (time == 0) of a fromTo(), we must force the render (normal tweens wouldn't need to render at a time of 0 when the prevTime was also 0). This is also mandatory to make sure overwriting kicks in immediately.
+        return;
+        prevIteration = tween._zTime;
+        tween._zTime = totalTime || (suppressEvents ? $eef254727dd68eca$var$_tinyNum : 0); // when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration tween, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect.
+        suppressEvents || (suppressEvents = totalTime && !prevIteration); // if it was rendered previously at exactly 0 (_zTime) and now the playhead is moving away, DON'T fire callbacks otherwise they'll seem like duplicates.
+        tween.ratio = ratio;
+        tween._from && (ratio = 1 - ratio);
+        tween._time = 0;
+        tween._tTime = tTime;
+        pt = tween._pt;
+        while(pt){
+            pt.r(ratio, pt.d);
+            pt = pt._next;
+        }
+        totalTime < 0 && $eef254727dd68eca$var$_rewindStartAt(tween, totalTime, suppressEvents, true);
+        tween._onUpdate && !suppressEvents && $eef254727dd68eca$var$_callback(tween, "onUpdate");
+        tTime && tween._repeat && !suppressEvents && tween.parent && $eef254727dd68eca$var$_callback(tween, "onRepeat");
+        if ((totalTime >= tween._tDur || totalTime < 0) && tween.ratio === ratio) {
+            ratio && $eef254727dd68eca$var$_removeFromParent(tween, 1);
+            if (!suppressEvents && !$eef254727dd68eca$var$_reverting) {
+                $eef254727dd68eca$var$_callback(tween, ratio ? "onComplete" : "onReverseComplete", true);
+                tween._prom && tween._prom();
+            }
+        }
+    } else if (!tween._zTime) tween._zTime = totalTime;
+}, $eef254727dd68eca$var$_findNextPauseTween = function _findNextPauseTween(animation, prevTime, time) {
+    var child;
+    if (time > prevTime) {
+        child = animation._first;
+        while(child && child._start <= time){
+            if (child.data === "isPause" && child._start > prevTime) return child;
+            child = child._next;
+        }
+    } else {
+        child = animation._last;
+        while(child && child._start >= time){
+            if (child.data === "isPause" && child._start < prevTime) return child;
+            child = child._prev;
+        }
+    }
+}, $eef254727dd68eca$var$_setDuration = function _setDuration(animation, duration, skipUncache, leavePlayhead) {
+    var repeat = animation._repeat, dur = $eef254727dd68eca$var$_roundPrecise(duration) || 0, totalProgress = animation._tTime / animation._tDur;
+    totalProgress && !leavePlayhead && (animation._time *= dur / animation._dur);
+    animation._dur = dur;
+    animation._tDur = !repeat ? dur : repeat < 0 ? 1e10 : $eef254727dd68eca$var$_roundPrecise(dur * (repeat + 1) + animation._rDelay * repeat);
+    totalProgress > 0 && !leavePlayhead && $eef254727dd68eca$var$_alignPlayhead(animation, animation._tTime = animation._tDur * totalProgress);
+    animation.parent && $eef254727dd68eca$var$_setEnd(animation);
+    skipUncache || $eef254727dd68eca$var$_uncache(animation.parent, animation);
+    return animation;
+}, $eef254727dd68eca$var$_onUpdateTotalDuration = function _onUpdateTotalDuration(animation) {
+    return animation instanceof $eef254727dd68eca$export$e6a97ba2cae5bb94 ? $eef254727dd68eca$var$_uncache(animation) : $eef254727dd68eca$var$_setDuration(animation, animation._dur);
+}, $eef254727dd68eca$var$_zeroPosition = {
+    _start: 0,
+    endTime: $eef254727dd68eca$var$_emptyFunc,
+    totalDuration: $eef254727dd68eca$var$_emptyFunc
+}, $eef254727dd68eca$var$_parsePosition = function _parsePosition(animation, position, percentAnimation) {
+    var labels = animation.labels, recent = animation._recent || $eef254727dd68eca$var$_zeroPosition, clippedDuration = animation.duration() >= $eef254727dd68eca$var$_bigNum ? recent.endTime(false) : animation._dur, //in case there's a child that infinitely repeats, users almost never intend for the insertion point of a new child to be based on a SUPER long value like that so we clip it and assume the most recently-added child's endTime should be used instead.
+    i, offset, isPercent;
+    if ($eef254727dd68eca$export$f664476fd67145ca(position) && (isNaN(position) || position in labels)) {
+        //if the string is a number like "1", check to see if there's a label with that name, otherwise interpret it as a number (absolute value).
+        offset = position.charAt(0);
+        isPercent = position.substr(-1) === "%";
+        i = position.indexOf("=");
+        if (offset === "<" || offset === ">") {
+            i >= 0 && (position = position.replace(/=/, ""));
+            return (offset === "<" ? recent._start : recent.endTime(recent._repeat >= 0)) + (parseFloat(position.substr(1)) || 0) * (isPercent ? (i < 0 ? recent : percentAnimation).totalDuration() / 100 : 1);
+        }
+        if (i < 0) {
+            position in labels || (labels[position] = clippedDuration);
+            return labels[position];
+        }
+        offset = parseFloat(position.charAt(i - 1) + position.substr(i + 1));
+        if (isPercent && percentAnimation) offset = offset / 100 * ($eef254727dd68eca$var$_isArray(percentAnimation) ? percentAnimation[0] : percentAnimation).totalDuration();
+        return i > 1 ? _parsePosition(animation, position.substr(0, i - 1), percentAnimation) + offset : clippedDuration + offset;
+    }
+    return position == null ? clippedDuration : +position;
+}, $eef254727dd68eca$var$_createTweenType = function _createTweenType(type, params, timeline) {
+    var isLegacy = $eef254727dd68eca$var$_isNumber(params[1]), varsIndex = (isLegacy ? 2 : 1) + (type < 2 ? 0 : 1), vars = params[varsIndex], irVars, parent;
+    isLegacy && (vars.duration = params[1]);
+    vars.parent = timeline;
+    if (type) {
+        irVars = vars;
+        parent = timeline;
+        while(parent && !("immediateRender" in irVars)){
+            // inheritance hasn't happened yet, but someone may have set a default in an ancestor timeline. We could do vars.immediateRender = _isNotFalse(_inheritDefaults(vars).immediateRender) but that'd exact a slight performance penalty because _inheritDefaults() also runs in the Tween constructor. We're paying a small kb price here to gain speed.
+            irVars = parent.vars.defaults || {};
+            parent = $eef254727dd68eca$var$_isNotFalse(parent.vars.inherit) && parent.parent;
+        }
+        vars.immediateRender = $eef254727dd68eca$var$_isNotFalse(irVars.immediateRender);
+        type < 2 ? vars.runBackwards = 1 : vars.startAt = params[varsIndex - 1]; // "from" vars
+    }
+    return new $eef254727dd68eca$export$208a41d6b4e37b97(params[0], vars, params[varsIndex + 1]);
+}, $eef254727dd68eca$var$_conditionalReturn = function _conditionalReturn(value, func) {
+    return value || value === 0 ? func(value) : func;
+}, $eef254727dd68eca$var$_clamp = function _clamp(min, max, value) {
+    return value < min ? min : value > max ? max : value;
+}, $eef254727dd68eca$export$65f2564e9a9b9222 = function getUnit(value, v) {
+    return !$eef254727dd68eca$export$f664476fd67145ca(value) || !(v = $eef254727dd68eca$var$_unitExp.exec(value)) ? "" : v[1];
+}, // note: protect against padded numbers as strings, like "100.100". That shouldn't return "00" as the unit. If it's numeric, return no unit.
+$eef254727dd68eca$export$7d15b64cf5a3a4c4 = function clamp(min, max, value) {
+    return $eef254727dd68eca$var$_conditionalReturn(value, function(v) {
+        return $eef254727dd68eca$var$_clamp(min, max, v);
+    });
+}, $eef254727dd68eca$var$_slice = [].slice, $eef254727dd68eca$var$_isArrayLike = function _isArrayLike(value, nonEmpty) {
+    return value && $eef254727dd68eca$var$_isObject(value) && "length" in value && (!nonEmpty && !value.length || value.length - 1 in value && $eef254727dd68eca$var$_isObject(value[0])) && !value.nodeType && value !== $eef254727dd68eca$var$_win;
+}, $eef254727dd68eca$var$_flatten = function _flatten(ar, leaveStrings, accumulator) {
+    if (accumulator === void 0) accumulator = [];
+    return ar.forEach(function(value) {
+        var _accumulator;
+        return $eef254727dd68eca$export$f664476fd67145ca(value) && !leaveStrings || $eef254727dd68eca$var$_isArrayLike(value, 1) ? (_accumulator = accumulator).push.apply(_accumulator, $eef254727dd68eca$export$45b10814cc054894(value)) : accumulator.push(value);
+    }) || accumulator;
+}, //takes any value and returns an array. If it's a string (and leaveStrings isn't true), it'll use document.querySelectorAll() and convert that to an array. It'll also accept iterables like jQuery objects.
+$eef254727dd68eca$export$45b10814cc054894 = function toArray(value, scope, leaveStrings) {
+    return $eef254727dd68eca$var$_context && !scope && $eef254727dd68eca$var$_context.selector ? $eef254727dd68eca$var$_context.selector(value) : $eef254727dd68eca$export$f664476fd67145ca(value) && !leaveStrings && ($eef254727dd68eca$var$_coreInitted || !$eef254727dd68eca$var$_wake()) ? $eef254727dd68eca$var$_slice.call((scope || $eef254727dd68eca$var$_doc).querySelectorAll(value), 0) : $eef254727dd68eca$var$_isArray(value) ? $eef254727dd68eca$var$_flatten(value, leaveStrings) : $eef254727dd68eca$var$_isArrayLike(value) ? $eef254727dd68eca$var$_slice.call(value, 0) : value ? [
+        value
+    ] : [];
+}, $eef254727dd68eca$export$aea217a45095ce11 = function selector(value) {
+    value = $eef254727dd68eca$export$45b10814cc054894(value)[0] || $eef254727dd68eca$var$_warn("Invalid scope") || {};
+    return function(v) {
+        var el = value.current || value.nativeElement || value;
+        return $eef254727dd68eca$export$45b10814cc054894(v, el.querySelectorAll ? el : el === value ? $eef254727dd68eca$var$_warn("Invalid scope") || $eef254727dd68eca$var$_doc.createElement("div") : value);
+    };
+}, $eef254727dd68eca$export$448332262467e042 = function shuffle(a) {
+    return a.sort(function() {
+        return .5 - Math.random();
+    });
+}, // alternative that's a bit faster and more reliably diverse but bigger:   for (let j, v, i = a.length; i; j = Math.floor(Math.random() * i), v = a[--i], a[i] = a[j], a[j] = v); return a;
+//for distributing values across an array. Can accept a number, a function or (most commonly) a function which can contain the following properties: {base, amount, from, ease, grid, axis, length, each}. Returns a function that expects the following parameters: index, target, array. Recognizes the following
+$eef254727dd68eca$export$f02a9ddbe4480f19 = function distribute(v) {
+    if ($eef254727dd68eca$var$_isFunction(v)) return v;
+    var vars = $eef254727dd68eca$var$_isObject(v) ? v : {
+        each: v
+    }, //n:1 is just to indicate v was a number; we leverage that later to set v according to the length we get. If a number is passed in, we treat it like the old stagger value where 0.1, for example, would mean that things would be distributed with 0.1 between each element in the array rather than a total "amount" that's chunked out among them all.
+    ease = $eef254727dd68eca$var$_parseEase(vars.ease), from = vars.from || 0, base = parseFloat(vars.base) || 0, cache = {}, isDecimal = from > 0 && from < 1, ratios = isNaN(from) || isDecimal, axis = vars.axis, ratioX = from, ratioY = from;
+    if ($eef254727dd68eca$export$f664476fd67145ca(from)) ratioX = ratioY = ({
+        center: .5,
+        edges: .5,
+        end: 1
+    })[from] || 0;
+    else if (!isDecimal && ratios) {
+        ratioX = from[0];
+        ratioY = from[1];
+    }
+    return function(i, target, a) {
+        var l = (a || vars).length, distances = cache[l], originX, originY, x, y, d, j, max, min, wrapAt;
+        if (!distances) {
+            wrapAt = vars.grid === "auto" ? 0 : (vars.grid || [
+                1,
+                $eef254727dd68eca$var$_bigNum
+            ])[1];
+            if (!wrapAt) {
+                max = -$eef254727dd68eca$var$_bigNum;
+                while(max < (max = a[wrapAt++].getBoundingClientRect().left) && wrapAt < l);
+                wrapAt--;
+            }
+            distances = cache[l] = [];
+            originX = ratios ? Math.min(wrapAt, l) * ratioX - .5 : from % wrapAt;
+            originY = wrapAt === $eef254727dd68eca$var$_bigNum ? 0 : ratios ? l * ratioY / wrapAt - .5 : from / wrapAt | 0;
+            max = 0;
+            min = $eef254727dd68eca$var$_bigNum;
+            for(j = 0; j < l; j++){
+                x = j % wrapAt - originX;
+                y = originY - (j / wrapAt | 0);
+                distances[j] = d = !axis ? $eef254727dd68eca$var$_sqrt(x * x + y * y) : Math.abs(axis === "y" ? y : x);
+                d > max && (max = d);
+                d < min && (min = d);
+            }
+            from === "random" && $eef254727dd68eca$export$448332262467e042(distances);
+            distances.max = max - min;
+            distances.min = min;
+            distances.v = l = (parseFloat(vars.amount) || parseFloat(vars.each) * (wrapAt > l ? l - 1 : !axis ? Math.max(wrapAt, l / wrapAt) : axis === "y" ? l / wrapAt : wrapAt) || 0) * (from === "edges" ? -1 : 1);
+            distances.b = l < 0 ? base - l : base;
+            distances.u = $eef254727dd68eca$export$65f2564e9a9b9222(vars.amount || vars.each) || 0; //unit
+            ease = ease && l < 0 ? $eef254727dd68eca$var$_invertEase(ease) : ease;
+        }
+        l = (distances[i] - distances.min) / distances.max || 0;
+        return $eef254727dd68eca$var$_roundPrecise(distances.b + (ease ? ease(l) : l) * distances.v) + distances.u; //round in order to work around floating point errors
+    };
+}, $eef254727dd68eca$export$dd12390e6b265a17 = function _roundModifier(v) {
+    //pass in 0.1 get a function that'll round to the nearest tenth, or 5 to round to the closest 5, or 0.001 to the closest 1000th, etc.
+    var p = Math.pow(10, ((v + "").split(".")[1] || "").length); //to avoid floating point math errors (like 24 * 0.1 == 2.4000000000000004), we chop off at a specific number of decimal places (much faster than toFixed())
+    return function(raw) {
+        var n = $eef254727dd68eca$var$_roundPrecise(Math.round(parseFloat(raw) / v) * v * p);
+        return (n - n % 1) / p + ($eef254727dd68eca$var$_isNumber(raw) ? 0 : $eef254727dd68eca$export$65f2564e9a9b9222(raw)); // n - n % 1 replaces Math.floor() in order to handle negative values properly. For example, Math.floor(-150.00000000000003) is 151!
+    };
+}, $eef254727dd68eca$export$51a0620f7a28532b = function snap(snapTo, value) {
+    var isArray = $eef254727dd68eca$var$_isArray(snapTo), radius, is2D;
+    if (!isArray && $eef254727dd68eca$var$_isObject(snapTo)) {
+        radius = isArray = snapTo.radius || $eef254727dd68eca$var$_bigNum;
+        if (snapTo.values) {
+            snapTo = $eef254727dd68eca$export$45b10814cc054894(snapTo.values);
+            if (is2D = !$eef254727dd68eca$var$_isNumber(snapTo[0])) radius *= radius; //performance optimization so we don't have to Math.sqrt() in the loop.
+        } else snapTo = $eef254727dd68eca$export$dd12390e6b265a17(snapTo.increment);
+    }
+    return $eef254727dd68eca$var$_conditionalReturn(value, !isArray ? $eef254727dd68eca$export$dd12390e6b265a17(snapTo) : $eef254727dd68eca$var$_isFunction(snapTo) ? function(raw) {
+        is2D = snapTo(raw);
+        return Math.abs(is2D - raw) <= radius ? is2D : raw;
+    } : function(raw) {
+        var x = parseFloat(is2D ? raw.x : raw), y = parseFloat(is2D ? raw.y : 0), min = $eef254727dd68eca$var$_bigNum, closest = 0, i = snapTo.length, dx, dy;
+        while(i--){
+            if (is2D) {
+                dx = snapTo[i].x - x;
+                dy = snapTo[i].y - y;
+                dx = dx * dx + dy * dy;
+            } else dx = Math.abs(snapTo[i] - x);
+            if (dx < min) {
+                min = dx;
+                closest = i;
+            }
+        }
+        closest = !radius || min <= radius ? snapTo[closest] : raw;
+        return is2D || closest === raw || $eef254727dd68eca$var$_isNumber(raw) ? closest : closest + $eef254727dd68eca$export$65f2564e9a9b9222(raw);
+    });
+}, $eef254727dd68eca$export$4385e60b38654f68 = function random(min, max, roundingIncrement, returnFunction) {
+    return $eef254727dd68eca$var$_conditionalReturn($eef254727dd68eca$var$_isArray(min) ? !max : roundingIncrement === true ? (roundingIncrement = 0, false) : !returnFunction, function() {
+        return $eef254727dd68eca$var$_isArray(min) ? min[~~(Math.random() * min.length)] : (roundingIncrement = roundingIncrement || 1e-5, returnFunction = roundingIncrement < 1 ? Math.pow(10, (roundingIncrement + "").length - 2) : 1) && Math.floor(Math.round((min - roundingIncrement / 2 + Math.random() * (max - min + roundingIncrement * .99)) / roundingIncrement) * roundingIncrement * returnFunction) / returnFunction;
+    });
+}, $eef254727dd68eca$export$a4627e546088548d = function pipe() {
+    for(var _len = arguments.length, functions = new Array(_len), _key = 0; _key < _len; _key++)functions[_key] = arguments[_key];
+    return function(value) {
+        return functions.reduce(function(v, f) {
+            return f(v);
+        }, value);
+    };
+}, $eef254727dd68eca$export$d7502930aa5492de = function unitize(func, unit) {
+    return function(value) {
+        return func(parseFloat(value)) + (unit || $eef254727dd68eca$export$65f2564e9a9b9222(value));
+    };
+}, $eef254727dd68eca$export$a3295358bff77e = function normalize(min, max, value) {
+    return $eef254727dd68eca$export$f65a7599bbc6b121(min, max, 0, 1, value);
+}, $eef254727dd68eca$var$_wrapArray = function _wrapArray(a, wrapper, value) {
+    return $eef254727dd68eca$var$_conditionalReturn(value, function(index) {
+        return a[~~wrapper(index)];
+    });
+}, $eef254727dd68eca$export$4997ffc0176396a6 = function wrap(min, max, value) {
+    // NOTE: wrap() CANNOT be an arrow function! A very odd compiling bug causes problems (unrelated to GSAP).
+    var range = max - min;
+    return $eef254727dd68eca$var$_isArray(min) ? $eef254727dd68eca$var$_wrapArray(min, wrap(0, min.length), max) : $eef254727dd68eca$var$_conditionalReturn(value, function(value) {
+        return (range + (value - min) % range) % range + min;
+    });
+}, $eef254727dd68eca$export$cfc0b067273edc55 = function wrapYoyo(min, max, value) {
+    var range = max - min, total = range * 2;
+    return $eef254727dd68eca$var$_isArray(min) ? $eef254727dd68eca$var$_wrapArray(min, wrapYoyo(0, min.length - 1), max) : $eef254727dd68eca$var$_conditionalReturn(value, function(value) {
+        value = (total + (value - min) % total) % total || 0;
+        return min + (value > range ? total - value : value);
+    });
+}, $eef254727dd68eca$export$d5962a97e3cde94d = function _replaceRandom(value) {
+    //replaces all occurrences of random(...) in a string with the calculated random value. can be a range like random(-100, 100, 5) or an array like random([0, 100, 500])
+    var prev = 0, s = "", i, nums, end, isArray;
+    while(~(i = value.indexOf("random(", prev))){
+        end = value.indexOf(")", i);
+        isArray = value.charAt(i + 7) === "[";
+        nums = value.substr(i + 7, end - i - 7).match(isArray ? $eef254727dd68eca$var$_delimitedValueExp : $eef254727dd68eca$var$_strictNumExp);
+        s += value.substr(prev, i - prev) + $eef254727dd68eca$export$4385e60b38654f68(isArray ? nums : +nums[0], isArray ? 0 : +nums[1], +nums[2] || 1e-5);
+        prev = end + 1;
+    }
+    return s + value.substr(prev, value.length - prev);
+}, $eef254727dd68eca$export$f65a7599bbc6b121 = function mapRange(inMin, inMax, outMin, outMax, value) {
+    var inRange = inMax - inMin, outRange = outMax - outMin;
+    return $eef254727dd68eca$var$_conditionalReturn(value, function(value) {
+        return outMin + ((value - inMin) / inRange * outRange || 0);
+    });
+}, $eef254727dd68eca$export$89e29e4ab65e70a9 = function interpolate(start, end, progress, mutate) {
+    var func = isNaN(start + end) ? 0 : function(p) {
+        return (1 - p) * start + p * end;
+    };
+    if (!func) {
+        var isString = $eef254727dd68eca$export$f664476fd67145ca(start), master = {}, p, i, interpolators, l, il;
+        progress === true && (mutate = 1) && (progress = null);
+        if (isString) {
+            start = {
+                p: start
+            };
+            end = {
+                p: end
+            };
+        } else if ($eef254727dd68eca$var$_isArray(start) && !$eef254727dd68eca$var$_isArray(end)) {
+            interpolators = [];
+            l = start.length;
+            il = l - 2;
+            for(i = 1; i < l; i++)interpolators.push(interpolate(start[i - 1], start[i])); //build the interpolators up front as a performance optimization so that when the function is called many times, it can just reuse them.
+            l--;
+            func = function func(p) {
+                p *= l;
+                var i = Math.min(il, ~~p);
+                return interpolators[i](p - i);
+            };
+            progress = end;
+        } else if (!mutate) start = $eef254727dd68eca$var$_merge($eef254727dd68eca$var$_isArray(start) ? [] : {}, start);
+        if (!interpolators) {
+            for(p in end)$eef254727dd68eca$var$_addPropTween.call(master, start, p, "get", end[p]);
+            func = function func(p) {
+                return $eef254727dd68eca$var$_renderPropTweens(p, master) || (isString ? start.p : start);
+            };
+        }
+    }
+    return $eef254727dd68eca$var$_conditionalReturn(progress, func);
+}, $eef254727dd68eca$var$_getLabelInDirection = function _getLabelInDirection(timeline, fromTime, backward) {
+    //used for nextLabel() and previousLabel()
+    var labels = timeline.labels, min = $eef254727dd68eca$var$_bigNum, p, distance, label;
+    for(p in labels){
+        distance = labels[p] - fromTime;
+        if (distance < 0 === !!backward && distance && min > (distance = Math.abs(distance))) {
+            label = p;
+            min = distance;
+        }
+    }
+    return label;
+}, $eef254727dd68eca$var$_callback = function _callback(animation, type, executeLazyFirst) {
+    var v = animation.vars, callback = v[type], prevContext = $eef254727dd68eca$var$_context, context = animation._ctx, params, scope, result;
+    if (!callback) return;
+    params = v[type + "Params"];
+    scope = v.callbackScope || animation;
+    executeLazyFirst && $eef254727dd68eca$var$_lazyTweens.length && $eef254727dd68eca$var$_lazyRender(); //in case rendering caused any tweens to lazy-init, we should render them because typically when a timeline finishes, users expect things to have rendered fully. Imagine an onUpdate on a timeline that reports/checks tweened values.
+    context && ($eef254727dd68eca$var$_context = context);
+    result = params ? callback.apply(scope, params) : callback.call(scope);
+    $eef254727dd68eca$var$_context = prevContext;
+    return result;
+}, $eef254727dd68eca$var$_interrupt = function _interrupt(animation) {
+    $eef254727dd68eca$var$_removeFromParent(animation);
+    animation.scrollTrigger && animation.scrollTrigger.kill(!!$eef254727dd68eca$var$_reverting);
+    animation.progress() < 1 && $eef254727dd68eca$var$_callback(animation, "onInterrupt");
+    return animation;
+}, $eef254727dd68eca$var$_quickTween, $eef254727dd68eca$var$_createPlugin = function _createPlugin(config) {
+    config = !config.name && config["default"] || config; //UMD packaging wraps things oddly, so for example MotionPathHelper becomes {MotionPathHelper:MotionPathHelper, default:MotionPathHelper}.
+    var name = config.name, isFunc = $eef254727dd68eca$var$_isFunction(config), Plugin = name && !isFunc && config.init ? function() {
+        this._props = [];
+    } : config, //in case someone passes in an object that's not a plugin, like CustomEase
+    instanceDefaults = {
+        init: $eef254727dd68eca$var$_emptyFunc,
+        render: $eef254727dd68eca$var$_renderPropTweens,
+        add: $eef254727dd68eca$var$_addPropTween,
+        kill: $eef254727dd68eca$var$_killPropTweensOf,
+        modifier: $eef254727dd68eca$var$_addPluginModifier,
+        rawVars: 0
+    }, statics = {
+        targetTest: 0,
+        get: 0,
+        getSetter: $eef254727dd68eca$export$d60fbc1e0278aaf0,
+        aliases: {},
+        register: 0
+    };
+    $eef254727dd68eca$var$_wake();
+    if (config !== Plugin) {
+        if ($eef254727dd68eca$export$d305d8ec5d7c26b8[name]) return;
+        $eef254727dd68eca$export$dc2b19673bb53610(Plugin, $eef254727dd68eca$export$dc2b19673bb53610($eef254727dd68eca$var$_copyExcluding(config, instanceDefaults), statics)); //static methods
+        $eef254727dd68eca$var$_merge(Plugin.prototype, $eef254727dd68eca$var$_merge(instanceDefaults, $eef254727dd68eca$var$_copyExcluding(config, statics))); //instance methods
+        $eef254727dd68eca$export$d305d8ec5d7c26b8[Plugin.prop = name] = Plugin;
+        if (config.targetTest) {
+            $eef254727dd68eca$var$_harnessPlugins.push(Plugin);
+            $eef254727dd68eca$var$_reservedProps[name] = 1;
+        }
+        name = (name === "css" ? "CSS" : name.charAt(0).toUpperCase() + name.substr(1)) + "Plugin"; //for the global name. "motionPath" should become MotionPathPlugin
+    }
+    $eef254727dd68eca$var$_addGlobal(name, Plugin);
+    config.register && config.register($eef254727dd68eca$export$99ee26438460406a, Plugin, $eef254727dd68eca$export$3a67f7f44b1e838a);
+}, /*
+ * --------------------------------------------------------------------------------------
+ * COLORS
+ * --------------------------------------------------------------------------------------
+ */ $eef254727dd68eca$var$_255 = 255, $eef254727dd68eca$var$_colorLookup = {
+    aqua: [
+        0,
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255
+    ],
+    lime: [
+        0,
+        $eef254727dd68eca$var$_255,
+        0
+    ],
+    silver: [
+        192,
+        192,
+        192
+    ],
+    black: [
+        0,
+        0,
+        0
+    ],
+    maroon: [
+        128,
+        0,
+        0
+    ],
+    teal: [
+        0,
+        128,
+        128
+    ],
+    blue: [
+        0,
+        0,
+        $eef254727dd68eca$var$_255
+    ],
+    navy: [
+        0,
+        0,
+        128
+    ],
+    white: [
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255
+    ],
+    olive: [
+        128,
+        128,
+        0
+    ],
+    yellow: [
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255,
+        0
+    ],
+    orange: [
+        $eef254727dd68eca$var$_255,
+        165,
+        0
+    ],
+    gray: [
+        128,
+        128,
+        128
+    ],
+    purple: [
+        128,
+        0,
+        128
+    ],
+    green: [
+        0,
+        128,
+        0
+    ],
+    red: [
+        $eef254727dd68eca$var$_255,
+        0,
+        0
+    ],
+    pink: [
+        $eef254727dd68eca$var$_255,
+        192,
+        203
+    ],
+    cyan: [
+        0,
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255
+    ],
+    transparent: [
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255,
+        $eef254727dd68eca$var$_255,
+        0
+    ]
+}, // possible future idea to replace the hard-coded color name values - put this in the ticker.wake() where we set the _doc:
+// let ctx = _doc.createElement("canvas").getContext("2d");
+// _forEachName("aqua,lime,silver,black,maroon,teal,blue,navy,white,olive,yellow,orange,gray,purple,green,red,pink,cyan", color => {ctx.fillStyle = color; _colorLookup[color] = splitColor(ctx.fillStyle)});
+$eef254727dd68eca$var$_hue = function _hue(h, m1, m2) {
+    h += h < 0 ? 1 : h > 1 ? -1 : 0;
+    return (h * 6 < 1 ? m1 + (m2 - m1) * h * 6 : h < .5 ? m2 : h * 3 < 2 ? m1 + (m2 - m1) * (2 / 3 - h) * 6 : m1) * $eef254727dd68eca$var$_255 + .5 | 0;
+}, $eef254727dd68eca$export$73d6f35be992df24 = function splitColor(v, toHSL, forceAlpha) {
+    var a = !v ? $eef254727dd68eca$var$_colorLookup.black : $eef254727dd68eca$var$_isNumber(v) ? [
+        v >> 16,
+        v >> 8 & $eef254727dd68eca$var$_255,
+        v & $eef254727dd68eca$var$_255
+    ] : 0, r, g, b, h, s, l, max, min, d, wasHSL;
+    if (!a) {
+        if (v.substr(-1) === ",") //sometimes a trailing comma is included and we should chop it off (typically from a comma-delimited list of values like a textShadow:"2px 2px 2px blue, 5px 5px 5px rgb(255,0,0)" - in this example "blue," has a trailing comma. We could strip it out inside parseComplex() but we'd need to do it to the beginning and ending values plus it wouldn't provide protection from other potential scenarios like if the user passes in a similar value.
+        v = v.substr(0, v.length - 1);
+        if ($eef254727dd68eca$var$_colorLookup[v]) a = $eef254727dd68eca$var$_colorLookup[v];
+        else if (v.charAt(0) === "#") {
+            if (v.length < 6) {
+                //for shorthand like #9F0 or #9F0F (could have alpha)
+                r = v.charAt(1);
+                g = v.charAt(2);
+                b = v.charAt(3);
+                v = "#" + r + r + g + g + b + b + (v.length === 5 ? v.charAt(4) + v.charAt(4) : "");
+            }
+            if (v.length === 9) {
+                // hex with alpha, like #fd5e53ff
+                a = parseInt(v.substr(1, 6), 16);
+                return [
+                    a >> 16,
+                    a >> 8 & $eef254727dd68eca$var$_255,
+                    a & $eef254727dd68eca$var$_255,
+                    parseInt(v.substr(7), 16) / 255
+                ];
+            }
+            v = parseInt(v.substr(1), 16);
+            a = [
+                v >> 16,
+                v >> 8 & $eef254727dd68eca$var$_255,
+                v & $eef254727dd68eca$var$_255
+            ];
+        } else if (v.substr(0, 3) === "hsl") {
+            a = wasHSL = v.match($eef254727dd68eca$var$_strictNumExp);
+            if (!toHSL) {
+                h = +a[0] % 360 / 360;
+                s = +a[1] / 100;
+                l = +a[2] / 100;
+                g = l <= .5 ? l * (s + 1) : l + s - l * s;
+                r = l * 2 - g;
+                a.length > 3 && (a[3] *= 1); //cast as number
+                a[0] = $eef254727dd68eca$var$_hue(h + 1 / 3, r, g);
+                a[1] = $eef254727dd68eca$var$_hue(h, r, g);
+                a[2] = $eef254727dd68eca$var$_hue(h - 1 / 3, r, g);
+            } else if (~v.indexOf("=")) {
+                //if relative values are found, just return the raw strings with the relative prefixes in place.
+                a = v.match($eef254727dd68eca$export$b9d44bb6523120d6);
+                forceAlpha && a.length < 4 && (a[3] = 1);
+                return a;
+            }
+        } else a = v.match($eef254727dd68eca$var$_strictNumExp) || $eef254727dd68eca$var$_colorLookup.transparent;
+        a = a.map(Number);
+    }
+    if (toHSL && !wasHSL) {
+        r = a[0] / $eef254727dd68eca$var$_255;
+        g = a[1] / $eef254727dd68eca$var$_255;
+        b = a[2] / $eef254727dd68eca$var$_255;
+        max = Math.max(r, g, b);
+        min = Math.min(r, g, b);
+        l = (max + min) / 2;
+        if (max === min) h = s = 0;
+        else {
+            d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+            h *= 60;
+        }
+        a[0] = ~~(h + .5);
+        a[1] = ~~(s * 100 + .5);
+        a[2] = ~~(l * 100 + .5);
+    }
+    forceAlpha && a.length < 4 && (a[3] = 1);
+    return a;
+}, $eef254727dd68eca$var$_colorOrderData = function _colorOrderData(v) {
+    // strips out the colors from the string, finds all the numeric slots (with units) and returns an array of those. The Array also has a "c" property which is an Array of the index values where the colors belong. This is to help work around issues where there's a mis-matched order of color/numeric data like drop-shadow(#f00 0px 1px 2px) and drop-shadow(0x 1px 2px #f00). This is basically a helper function used in _formatColors()
+    var values = [], c = [], i = -1;
+    v.split($eef254727dd68eca$export$dd733e62515be2bd).forEach(function(v) {
+        var a = v.match($eef254727dd68eca$export$65c88bbd597e7b0a) || [];
+        values.push.apply(values, a);
+        c.push(i += a.length + 1);
+    });
+    values.c = c;
+    return values;
+}, $eef254727dd68eca$var$_formatColors = function _formatColors(s, toHSL, orderMatchData) {
+    var result = "", colors = (s + result).match($eef254727dd68eca$export$dd733e62515be2bd), type = toHSL ? "hsla(" : "rgba(", i = 0, c, shell, d, l;
+    if (!colors) return s;
+    colors = colors.map(function(color) {
+        return (color = $eef254727dd68eca$export$73d6f35be992df24(color, toHSL, 1)) && type + (toHSL ? color[0] + "," + color[1] + "%," + color[2] + "%," + color[3] : color.join(",")) + ")";
+    });
+    if (orderMatchData) {
+        d = $eef254727dd68eca$var$_colorOrderData(s);
+        c = orderMatchData.c;
+        if (c.join(result) !== d.c.join(result)) {
+            shell = s.replace($eef254727dd68eca$export$dd733e62515be2bd, "1").split($eef254727dd68eca$export$65c88bbd597e7b0a);
+            l = shell.length - 1;
+            for(; i < l; i++)result += shell[i] + (~c.indexOf(i) ? colors.shift() || type + "0,0,0,0)" : (d.length ? d : colors.length ? colors : orderMatchData).shift());
+        }
+    }
+    if (!shell) {
+        shell = s.split($eef254727dd68eca$export$dd733e62515be2bd);
+        l = shell.length - 1;
+        for(; i < l; i++)result += shell[i] + colors[i];
+    }
+    return result + shell[l];
+}, $eef254727dd68eca$export$dd733e62515be2bd = function() {
+    var s = "(?:\\b(?:(?:rgb|rgba|hsl|hsla)\\(.+?\\))|\\B#(?:[0-9a-f]{3,4}){1,2}\\b", //we'll dynamically build this Regular Expression to conserve file size. After building it, it will be able to find rgb(), rgba(), # (hexadecimal), and named color values like red, blue, purple, etc.,
+    p;
+    for(p in $eef254727dd68eca$var$_colorLookup)s += "|" + p + "\\b";
+    return new RegExp(s + ")", "gi");
+}(), $eef254727dd68eca$var$_hslExp = /hsl[a]?\(/, $eef254727dd68eca$export$7eb2e5eb5eeb96a4 = function _colorStringFilter(a) {
+    var combined = a.join(" "), toHSL;
+    $eef254727dd68eca$export$dd733e62515be2bd.lastIndex = 0;
+    if ($eef254727dd68eca$export$dd733e62515be2bd.test(combined)) {
+        toHSL = $eef254727dd68eca$var$_hslExp.test(combined);
+        a[1] = $eef254727dd68eca$var$_formatColors(a[1], toHSL);
+        a[0] = $eef254727dd68eca$var$_formatColors(a[0], toHSL, $eef254727dd68eca$var$_colorOrderData(a[1])); // make sure the order of numbers/colors match with the END value.
+        return true;
+    }
+}, /*
+ * --------------------------------------------------------------------------------------
+ * TICKER
+ * --------------------------------------------------------------------------------------
+ */ $eef254727dd68eca$var$_tickerActive, $eef254727dd68eca$export$762ed8fbedb691e3 = function() {
+    var _getTime = Date.now, _lagThreshold = 500, _adjustedLag = 33, _startTime = _getTime(), _lastUpdate = _startTime, _gap = 1000 / 240, _nextTime = _gap, _listeners = [], _id, _req, _raf, _self, _delta, _i, _tick = function _tick(v) {
+        var elapsed = _getTime() - _lastUpdate, manual = v === true, overlap, dispatch, time, frame;
+        elapsed > _lagThreshold && (_startTime += elapsed - _adjustedLag);
+        _lastUpdate += elapsed;
+        time = _lastUpdate - _startTime;
+        overlap = time - _nextTime;
+        if (overlap > 0 || manual) {
+            frame = ++_self.frame;
+            _delta = time - _self.time * 1000;
+            _self.time = time = time / 1000;
+            _nextTime += overlap + (overlap >= _gap ? 4 : _gap - overlap);
+            dispatch = 1;
+        }
+        manual || (_id = _req(_tick)); //make sure the request is made before we dispatch the "tick" event so that timing is maintained. Otherwise, if processing the "tick" requires a bunch of time (like 15ms) and we're using a setTimeout() that's based on 16.7ms, it'd technically take 31.7ms between frames otherwise.
+        if (dispatch) for(_i = 0; _i < _listeners.length; _i++)// use _i and check _listeners.length instead of a variable because a listener could get removed during the loop, and if that happens to an element less than the current index, it'd throw things off in the loop.
+        _listeners[_i](time, _delta, frame, v);
+    };
+    _self = {
+        time: 0,
+        frame: 0,
+        tick: function tick() {
+            _tick(true);
+        },
+        deltaRatio: function deltaRatio(fps) {
+            return _delta / (1000 / (fps || 60));
+        },
+        wake: function wake() {
+            if ($eef254727dd68eca$var$_coreReady) {
+                if (!$eef254727dd68eca$var$_coreInitted && $eef254727dd68eca$var$_windowExists()) {
+                    $eef254727dd68eca$var$_win = $eef254727dd68eca$var$_coreInitted = window;
+                    $eef254727dd68eca$var$_doc = $eef254727dd68eca$var$_win.document || {};
+                    $eef254727dd68eca$var$_globals.gsap = $eef254727dd68eca$export$99ee26438460406a;
+                    ($eef254727dd68eca$var$_win.gsapVersions || ($eef254727dd68eca$var$_win.gsapVersions = [])).push($eef254727dd68eca$export$99ee26438460406a.version);
+                    $eef254727dd68eca$var$_install($eef254727dd68eca$var$_installScope || $eef254727dd68eca$var$_win.GreenSockGlobals || !$eef254727dd68eca$var$_win.gsap && $eef254727dd68eca$var$_win || {});
+                    _raf = $eef254727dd68eca$var$_win.requestAnimationFrame;
+                }
+                _id && _self.sleep();
+                _req = _raf || function(f) {
+                    return setTimeout(f, _nextTime - _self.time * 1000 + 1 | 0);
+                };
+                $eef254727dd68eca$var$_tickerActive = 1;
+                _tick(2);
+            }
+        },
+        sleep: function sleep() {
+            (_raf ? $eef254727dd68eca$var$_win.cancelAnimationFrame : clearTimeout)(_id);
+            $eef254727dd68eca$var$_tickerActive = 0;
+            _req = $eef254727dd68eca$var$_emptyFunc;
+        },
+        lagSmoothing: function lagSmoothing(threshold, adjustedLag) {
+            _lagThreshold = threshold || 1 / $eef254727dd68eca$var$_tinyNum; //zero should be interpreted as basically unlimited
+            _adjustedLag = Math.min(adjustedLag, _lagThreshold, 0);
+        },
+        fps: function fps(_fps) {
+            _gap = 1000 / (_fps || 240);
+            _nextTime = _self.time * 1000 + _gap;
+        },
+        add: function add(callback, once, prioritize) {
+            var func = once ? function(t, d, f, v) {
+                callback(t, d, f, v);
+                _self.remove(func);
+            } : callback;
+            _self.remove(callback);
+            _listeners[prioritize ? "unshift" : "push"](func);
+            $eef254727dd68eca$var$_wake();
+            return func;
+        },
+        remove: function remove(callback, i) {
+            ~(i = _listeners.indexOf(callback)) && _listeners.splice(i, 1) && _i >= i && _i--;
+        },
+        _listeners: _listeners
+    };
+    return _self;
+}(), $eef254727dd68eca$var$_wake = function _wake() {
+    return !$eef254727dd68eca$var$_tickerActive && $eef254727dd68eca$export$762ed8fbedb691e3.wake();
+}, //also ensures the core classes are initialized.
+/*
+* -------------------------------------------------
+* EASING
+* -------------------------------------------------
+*/ $eef254727dd68eca$var$_easeMap = {}, $eef254727dd68eca$var$_customEaseExp = /^[\d.\-M][\d.\-,\s]/, $eef254727dd68eca$var$_quotesExp = /["']/g, $eef254727dd68eca$var$_parseObjectInString = function _parseObjectInString(value) {
+    //takes a string like "{wiggles:10, type:anticipate})" and turns it into a real object. Notice it ends in ")" and includes the {} wrappers. This is because we only use this function for parsing ease configs and prioritized optimization rather than reusability.
+    var obj = {}, split = value.substr(1, value.length - 3).split(":"), key = split[0], i = 1, l = split.length, index, val, parsedVal;
+    for(; i < l; i++){
+        val = split[i];
+        index = i !== l - 1 ? val.lastIndexOf(",") : val.length;
+        parsedVal = val.substr(0, index);
+        obj[key] = isNaN(parsedVal) ? parsedVal.replace($eef254727dd68eca$var$_quotesExp, "").trim() : +parsedVal;
+        key = val.substr(index + 1).trim();
+    }
+    return obj;
+}, $eef254727dd68eca$var$_valueInParentheses = function _valueInParentheses(value) {
+    var open = value.indexOf("(") + 1, close = value.indexOf(")"), nested = value.indexOf("(", open);
+    return value.substring(open, ~nested && nested < close ? value.indexOf(")", close + 1) : close);
+}, $eef254727dd68eca$var$_configEaseFromString = function _configEaseFromString(name) {
+    //name can be a string like "elastic.out(1,0.5)", and pass in _easeMap as obj and it'll parse it out and call the actual function like _easeMap.Elastic.easeOut.config(1,0.5). It will also parse custom ease strings as long as CustomEase is loaded and registered (internally as _easeMap._CE).
+    var split = (name + "").split("("), ease = $eef254727dd68eca$var$_easeMap[split[0]];
+    return ease && split.length > 1 && ease.config ? ease.config.apply(null, ~name.indexOf("{") ? [
+        $eef254727dd68eca$var$_parseObjectInString(split[1])
+    ] : $eef254727dd68eca$var$_valueInParentheses(name).split(",").map($eef254727dd68eca$var$_numericIfPossible)) : $eef254727dd68eca$var$_easeMap._CE && $eef254727dd68eca$var$_customEaseExp.test(name) ? $eef254727dd68eca$var$_easeMap._CE("", name) : ease;
+}, $eef254727dd68eca$var$_invertEase = function _invertEase(ease) {
+    return function(p) {
+        return 1 - ease(1 - p);
+    };
+}, // allow yoyoEase to be set in children and have those affected when the parent/ancestor timeline yoyos.
+$eef254727dd68eca$var$_propagateYoyoEase = function _propagateYoyoEase(timeline, isYoyo) {
+    var child = timeline._first, ease;
+    while(child){
+        if (child instanceof $eef254727dd68eca$export$e6a97ba2cae5bb94) _propagateYoyoEase(child, isYoyo);
+        else if (child.vars.yoyoEase && (!child._yoyo || !child._repeat) && child._yoyo !== isYoyo) {
+            if (child.timeline) _propagateYoyoEase(child.timeline, isYoyo);
+            else {
+                ease = child._ease;
+                child._ease = child._yEase;
+                child._yEase = ease;
+                child._yoyo = isYoyo;
+            }
+        }
+        child = child._next;
+    }
+}, $eef254727dd68eca$var$_parseEase = function _parseEase(ease, defaultEase) {
+    return !ease ? defaultEase : ($eef254727dd68eca$var$_isFunction(ease) ? ease : $eef254727dd68eca$var$_easeMap[ease] || $eef254727dd68eca$var$_configEaseFromString(ease)) || defaultEase;
+}, $eef254727dd68eca$var$_insertEase = function _insertEase(names, easeIn, easeOut, easeInOut) {
+    if (easeOut === void 0) easeOut = function easeOut(p) {
+        return 1 - easeIn(1 - p);
+    };
+    if (easeInOut === void 0) easeInOut = function easeInOut(p) {
+        return p < .5 ? easeIn(p * 2) / 2 : 1 - easeIn((1 - p) * 2) / 2;
+    };
+    var ease = {
+        easeIn: easeIn,
+        easeOut: easeOut,
+        easeInOut: easeInOut
+    }, lowercaseName;
+    $eef254727dd68eca$export$f9000b814859f126(names, function(name) {
+        $eef254727dd68eca$var$_easeMap[name] = $eef254727dd68eca$var$_globals[name] = ease;
+        $eef254727dd68eca$var$_easeMap[lowercaseName = name.toLowerCase()] = easeOut;
+        for(var p in ease)$eef254727dd68eca$var$_easeMap[lowercaseName + (p === "easeIn" ? ".in" : p === "easeOut" ? ".out" : ".inOut")] = $eef254727dd68eca$var$_easeMap[name + "." + p] = ease[p];
+    });
+    return ease;
+}, $eef254727dd68eca$var$_easeInOutFromOut = function _easeInOutFromOut(easeOut) {
+    return function(p) {
+        return p < .5 ? (1 - easeOut(1 - p * 2)) / 2 : .5 + easeOut((p - .5) * 2) / 2;
+    };
+}, $eef254727dd68eca$var$_configElastic = function _configElastic(type, amplitude, period) {
+    var p1 = amplitude >= 1 ? amplitude : 1, //note: if amplitude is < 1, we simply adjust the period for a more natural feel. Otherwise the math doesn't work right and the curve starts at 1.
+    p2 = (period || (type ? .3 : .45)) / (amplitude < 1 ? amplitude : 1), p3 = p2 / $eef254727dd68eca$var$_2PI * (Math.asin(1 / p1) || 0), easeOut = function easeOut(p) {
+        return p === 1 ? 1 : p1 * Math.pow(2, -10 * p) * $eef254727dd68eca$var$_sin((p - p3) * p2) + 1;
+    }, ease = type === "out" ? easeOut : type === "in" ? function(p) {
+        return 1 - easeOut(1 - p);
+    } : $eef254727dd68eca$var$_easeInOutFromOut(easeOut);
+    p2 = $eef254727dd68eca$var$_2PI / p2; //precalculate to optimize
+    ease.config = function(amplitude, period) {
+        return _configElastic(type, amplitude, period);
+    };
+    return ease;
+}, $eef254727dd68eca$var$_configBack = function _configBack(type, overshoot) {
+    if (overshoot === void 0) overshoot = 1.70158;
+    var easeOut = function easeOut(p) {
+        return p ? --p * p * ((overshoot + 1) * p + overshoot) + 1 : 0;
+    }, ease = type === "out" ? easeOut : type === "in" ? function(p) {
+        return 1 - easeOut(1 - p);
+    } : $eef254727dd68eca$var$_easeInOutFromOut(easeOut);
+    ease.config = function(overshoot) {
+        return _configBack(type, overshoot);
+    };
+    return ease;
+}; // a cheaper (kb and cpu) but more mild way to get a parameterized weighted ease by feeding in a value between -1 (easeIn) and 1 (easeOut) where 0 is linear.
+// _weightedEase = ratio => {
+// 	let y = 0.5 + ratio / 2;
+// 	return p => (2 * (1 - p) * p * y + p * p);
+// },
+// a stronger (but more expensive kb/cpu) parameterized weighted ease that lets you feed in a value between -1 (easeIn) and 1 (easeOut) where 0 is linear.
+// _weightedEaseStrong = ratio => {
+// 	ratio = .5 + ratio / 2;
+// 	let o = 1 / 3 * (ratio < .5 ? ratio : 1 - ratio),
+// 		b = ratio - o,
+// 		c = ratio + o;
+// 	return p => p === 1 ? p : 3 * b * (1 - p) * (1 - p) * p + 3 * c * (1 - p) * p * p + p * p * p;
+// };
+$eef254727dd68eca$export$f9000b814859f126("Linear,Quad,Cubic,Quart,Quint,Strong", function(name, i) {
+    var power = i < 5 ? i + 1 : i;
+    $eef254727dd68eca$var$_insertEase(name + ",Power" + (power - 1), i ? function(p) {
+        return Math.pow(p, power);
+    } : function(p) {
+        return p;
+    }, function(p) {
+        return 1 - Math.pow(1 - p, power);
+    }, function(p) {
+        return p < .5 ? Math.pow(p * 2, power) / 2 : 1 - Math.pow((1 - p) * 2, power) / 2;
+    });
+});
+$eef254727dd68eca$var$_easeMap.Linear.easeNone = $eef254727dd68eca$var$_easeMap.none = $eef254727dd68eca$var$_easeMap.Linear.easeIn;
+$eef254727dd68eca$var$_insertEase("Elastic", $eef254727dd68eca$var$_configElastic("in"), $eef254727dd68eca$var$_configElastic("out"), $eef254727dd68eca$var$_configElastic());
+(function(n, c) {
+    var n1 = 1 / c, n2 = 2 * n1, n3 = 2.5 * n1, easeOut = function easeOut(p) {
+        return p < n1 ? n * p * p : p < n2 ? n * Math.pow(p - 1.5 / c, 2) + .75 : p < n3 ? n * (p -= 2.25 / c) * p + .9375 : n * Math.pow(p - 2.625 / c, 2) + .984375;
+    };
+    $eef254727dd68eca$var$_insertEase("Bounce", function(p) {
+        return 1 - easeOut(1 - p);
+    }, easeOut);
+})(7.5625, 2.75);
+$eef254727dd68eca$var$_insertEase("Expo", function(p) {
+    return p ? Math.pow(2, 10 * (p - 1)) : 0;
+});
+$eef254727dd68eca$var$_insertEase("Circ", function(p) {
+    return -($eef254727dd68eca$var$_sqrt(1 - p * p) - 1);
+});
+$eef254727dd68eca$var$_insertEase("Sine", function(p) {
+    return p === 1 ? 1 : -$eef254727dd68eca$var$_cos(p * $eef254727dd68eca$var$_HALF_PI) + 1;
+});
+$eef254727dd68eca$var$_insertEase("Back", $eef254727dd68eca$var$_configBack("in"), $eef254727dd68eca$var$_configBack("out"), $eef254727dd68eca$var$_configBack());
+$eef254727dd68eca$var$_easeMap.SteppedEase = $eef254727dd68eca$var$_easeMap.steps = $eef254727dd68eca$var$_globals.SteppedEase = {
+    config: function config(steps, immediateStart) {
+        if (steps === void 0) steps = 1;
+        var p1 = 1 / steps, p2 = steps + (immediateStart ? 0 : 1), p3 = immediateStart ? 1 : 0, max = 1 - $eef254727dd68eca$var$_tinyNum;
+        return function(p) {
+            return ((p2 * $eef254727dd68eca$var$_clamp(0, max, p) | 0) + p3) * p1;
+        };
+    }
+};
+$eef254727dd68eca$var$_defaults.ease = $eef254727dd68eca$var$_easeMap["quad.out"];
+$eef254727dd68eca$export$f9000b814859f126("onComplete,onUpdate,onStart,onRepeat,onReverseComplete,onInterrupt", function(name) {
+    return $eef254727dd68eca$var$_callbackNames += name + "," + name + "Params,";
+});
+var $eef254727dd68eca$export$cf10981d5419cad5 = function GSCache(target, harness) {
+    this.id = $eef254727dd68eca$var$_gsID++;
+    target._gsap = this;
+    this.target = target;
+    this.harness = harness;
+    this.get = harness ? harness.get : $eef254727dd68eca$export$51d6bbe898aef1f9;
+    this.set = harness ? harness.getSetter : $eef254727dd68eca$export$d60fbc1e0278aaf0;
+};
+var $eef254727dd68eca$export$c35d437ae5945fcd = /*#__PURE__*/ function() {
+    function Animation(vars) {
+        this.vars = vars;
+        this._delay = +vars.delay || 0;
+        if (this._repeat = vars.repeat === Infinity ? -2 : vars.repeat || 0) {
+            // TODO: repeat: Infinity on a timeline's children must flag that timeline internally and affect its totalDuration, otherwise it'll stop in the negative direction when reaching the start.
+            this._rDelay = vars.repeatDelay || 0;
+            this._yoyo = !!vars.yoyo || !!vars.yoyoEase;
+        }
+        this._ts = 1;
+        $eef254727dd68eca$var$_setDuration(this, +vars.duration, 1, 1);
+        this.data = vars.data;
+        if ($eef254727dd68eca$var$_context) {
+            this._ctx = $eef254727dd68eca$var$_context;
+            $eef254727dd68eca$var$_context.data.push(this);
+        }
+        $eef254727dd68eca$var$_tickerActive || $eef254727dd68eca$export$762ed8fbedb691e3.wake();
+    }
+    var _proto = Animation.prototype;
+    _proto.delay = function delay(value) {
+        if (value || value === 0) {
+            this.parent && this.parent.smoothChildTiming && this.startTime(this._start + value - this._delay);
+            this._delay = value;
+            return this;
+        }
+        return this._delay;
+    };
+    _proto.duration = function duration(value) {
+        return arguments.length ? this.totalDuration(this._repeat > 0 ? value + (value + this._rDelay) * this._repeat : value) : this.totalDuration() && this._dur;
+    };
+    _proto.totalDuration = function totalDuration(value) {
+        if (!arguments.length) return this._tDur;
+        this._dirty = 0;
+        return $eef254727dd68eca$var$_setDuration(this, this._repeat < 0 ? value : (value - this._repeat * this._rDelay) / (this._repeat + 1));
+    };
+    _proto.totalTime = function totalTime(_totalTime, suppressEvents) {
+        $eef254727dd68eca$var$_wake();
+        if (!arguments.length) return this._tTime;
+        var parent = this._dp;
+        if (parent && parent.smoothChildTiming && this._ts) {
+            $eef254727dd68eca$var$_alignPlayhead(this, _totalTime);
+            !parent._dp || parent.parent || $eef254727dd68eca$var$_postAddChecks(parent, this); // edge case: if this is a child of a timeline that already completed, for example, we must re-activate the parent.
+            //in case any of the ancestor timelines had completed but should now be enabled, we should reset their totalTime() which will also ensure that they're lined up properly and enabled. Skip for animations that are on the root (wasteful). Example: a TimelineLite.exportRoot() is performed when there's a paused tween on the root, the export will not complete until that tween is unpaused, but imagine a child gets restarted later, after all [unpaused] tweens have completed. The start of that child would get pushed out, but one of the ancestors may have completed.
+            while(parent && parent.parent){
+                if (parent.parent._time !== parent._start + (parent._ts >= 0 ? parent._tTime / parent._ts : (parent.totalDuration() - parent._tTime) / -parent._ts)) parent.totalTime(parent._tTime, true);
+                parent = parent.parent;
+            }
+            if (!this.parent && this._dp.autoRemoveChildren && (this._ts > 0 && _totalTime < this._tDur || this._ts < 0 && _totalTime > 0 || !this._tDur && !_totalTime)) //if the animation doesn't have a parent, put it back into its last parent (recorded as _dp for exactly cases like this). Limit to parents with autoRemoveChildren (like globalTimeline) so that if the user manually removes an animation from a timeline and then alters its playhead, it doesn't get added back in.
+            $eef254727dd68eca$var$_addToTimeline(this._dp, this, this._start - this._delay);
+        }
+        if (this._tTime !== _totalTime || !this._dur && !suppressEvents || this._initted && Math.abs(this._zTime) === $eef254727dd68eca$var$_tinyNum || !_totalTime && !this._initted && (this.add || this._ptLookup)) {
+            // check for _ptLookup on a Tween instance to ensure it has actually finished being instantiated, otherwise if this.reverse() gets called in the Animation constructor, it could trigger a render() here even though the _targets weren't populated, thus when _init() is called there won't be any PropTweens (it'll act like the tween is non-functional)
+            this._ts || (this._pTime = _totalTime); // otherwise, if an animation is paused, then the playhead is moved back to zero, then resumed, it'd revert back to the original time at the pause
+            //if (!this._lock) { // avoid endless recursion (not sure we need this yet or if it's worth the performance hit)
+            //   this._lock = 1;
+            $eef254727dd68eca$var$_lazySafeRender(this, _totalTime, suppressEvents); //   this._lock = 0;
+        //}
+        }
+        return this;
+    };
+    _proto.time = function time(value, suppressEvents) {
+        return arguments.length ? this.totalTime(Math.min(this.totalDuration(), value + $eef254727dd68eca$var$_elapsedCycleDuration(this)) % (this._dur + this._rDelay) || (value ? this._dur : 0), suppressEvents) : this._time; // note: if the modulus results in 0, the playhead could be exactly at the end or the beginning, and we always defer to the END with a non-zero value, otherwise if you set the time() to the very end (duration()), it would render at the START!
+    };
+    _proto.totalProgress = function totalProgress(value, suppressEvents) {
+        return arguments.length ? this.totalTime(this.totalDuration() * value, suppressEvents) : this.totalDuration() ? Math.min(1, this._tTime / this._tDur) : this.ratio;
+    };
+    _proto.progress = function progress(value, suppressEvents) {
+        return arguments.length ? this.totalTime(this.duration() * (this._yoyo && !(this.iteration() & 1) ? 1 - value : value) + $eef254727dd68eca$var$_elapsedCycleDuration(this), suppressEvents) : this.duration() ? Math.min(1, this._time / this._dur) : this.ratio;
+    };
+    _proto.iteration = function iteration(value, suppressEvents) {
+        var cycleDuration = this.duration() + this._rDelay;
+        return arguments.length ? this.totalTime(this._time + (value - 1) * cycleDuration, suppressEvents) : this._repeat ? $eef254727dd68eca$var$_animationCycle(this._tTime, cycleDuration) + 1 : 1;
+    } // potential future addition:
+    ;
+    _proto.timeScale = function timeScale(value) {
+        if (!arguments.length) return this._rts === -$eef254727dd68eca$var$_tinyNum ? 0 : this._rts; // recorded timeScale. Special case: if someone calls reverse() on an animation with timeScale of 0, we assign it -_tinyNum to remember it's reversed.
+        if (this._rts === value) return this;
+        var tTime = this.parent && this._ts ? $eef254727dd68eca$var$_parentToChildTotalTime(this.parent._time, this) : this._tTime; // make sure to do the parentToChildTotalTime() BEFORE setting the new _ts because the old one must be used in that calculation.
+        // future addition? Up side: fast and minimal file size. Down side: only works on this animation; if a timeline is reversed, for example, its childrens' onReverse wouldn't get called.
+        //(+value < 0 && this._rts >= 0) && _callback(this, "onReverse", true);
+        // prioritize rendering where the parent's playhead lines up instead of this._tTime because there could be a tween that's animating another tween's timeScale in the same rendering loop (same parent), thus if the timeScale tween renders first, it would alter _start BEFORE _tTime was set on that tick (in the rendering loop), effectively freezing it until the timeScale tween finishes.
+        this._rts = +value || 0;
+        this._ts = this._ps || value === -$eef254727dd68eca$var$_tinyNum ? 0 : this._rts; // _ts is the functional timeScale which would be 0 if the animation is paused.
+        this.totalTime($eef254727dd68eca$var$_clamp(-this._delay, this._tDur, tTime), true);
+        $eef254727dd68eca$var$_setEnd(this); // if parent.smoothChildTiming was false, the end time didn't get updated in the _alignPlayhead() method, so do it here.
+        return $eef254727dd68eca$var$_recacheAncestors(this);
+    };
+    _proto.paused = function paused(value) {
+        if (!arguments.length) return this._ps;
+        if (this._ps !== value) {
+            this._ps = value;
+            if (value) {
+                this._pTime = this._tTime || Math.max(-this._delay, this.rawTime()); // if the pause occurs during the delay phase, make sure that's factored in when resuming.
+                this._ts = this._act = 0; // _ts is the functional timeScale, so a paused tween would effectively have a timeScale of 0. We record the "real" timeScale as _rts (recorded time scale)
+            } else {
+                $eef254727dd68eca$var$_wake();
+                this._ts = this._rts; //only defer to _pTime (pauseTime) if tTime is zero. Remember, someone could pause() an animation, then scrub the playhead and resume(). If the parent doesn't have smoothChildTiming, we render at the rawTime() because the startTime won't get updated.
+                this.totalTime(this.parent && !this.parent.smoothChildTiming ? this.rawTime() : this._tTime || this._pTime, this.progress() === 1 && Math.abs(this._zTime) !== $eef254727dd68eca$var$_tinyNum && (this._tTime -= $eef254727dd68eca$var$_tinyNum)); // edge case: animation.progress(1).pause().play() wouldn't render again because the playhead is already at the end, but the call to totalTime() below will add it back to its parent...and not remove it again (since removing only happens upon rendering at a new time). Offsetting the _tTime slightly is done simply to cause the final render in totalTime() that'll pop it off its timeline (if autoRemoveChildren is true, of course). Check to make sure _zTime isn't -_tinyNum to avoid an edge case where the playhead is pushed to the end but INSIDE a tween/callback, the timeline itself is paused thus halting rendering and leaving a few unrendered. When resuming, it wouldn't render those otherwise.
+            }
+        }
+        return this;
+    };
+    _proto.startTime = function startTime(value) {
+        if (arguments.length) {
+            this._start = value;
+            var parent = this.parent || this._dp;
+            parent && (parent._sort || !this.parent) && $eef254727dd68eca$var$_addToTimeline(parent, this, value - this._delay);
+            return this;
+        }
+        return this._start;
+    };
+    _proto.endTime = function endTime(includeRepeats) {
+        return this._start + ($eef254727dd68eca$var$_isNotFalse(includeRepeats) ? this.totalDuration() : this.duration()) / Math.abs(this._ts || 1);
+    };
+    _proto.rawTime = function rawTime(wrapRepeats) {
+        var parent = this.parent || this._dp; // _dp = detached parent
+        return !parent ? this._tTime : wrapRepeats && (!this._ts || this._repeat && this._time && this.totalProgress() < 1) ? this._tTime % (this._dur + this._rDelay) : !this._ts ? this._tTime : $eef254727dd68eca$var$_parentToChildTotalTime(parent.rawTime(wrapRepeats), this);
+    };
+    _proto.revert = function revert(config) {
+        if (config === void 0) config = $eef254727dd68eca$var$_revertConfig;
+        var prevIsReverting = $eef254727dd68eca$var$_reverting;
+        $eef254727dd68eca$var$_reverting = config;
+        if (this._initted || this._startAt) {
+            this.timeline && this.timeline.revert(config);
+            this.totalTime(-0.01, config.suppressEvents);
+        }
+        this.data !== "nested" && config.kill !== false && this.kill();
+        $eef254727dd68eca$var$_reverting = prevIsReverting;
+        return this;
+    };
+    _proto.globalTime = function globalTime(rawTime) {
+        var animation = this, time = arguments.length ? rawTime : animation.rawTime();
+        while(animation){
+            time = animation._start + time / (animation._ts || 1);
+            animation = animation._dp;
+        }
+        return !this.parent && this.vars.immediateRender ? -1 : time; // the _startAt tweens for .fromTo() and .from() that have immediateRender should always be FIRST in the timeline (important for Recording.revert())
+    };
+    _proto.repeat = function repeat(value) {
+        if (arguments.length) {
+            this._repeat = value === Infinity ? -2 : value;
+            return $eef254727dd68eca$var$_onUpdateTotalDuration(this);
+        }
+        return this._repeat === -2 ? Infinity : this._repeat;
+    };
+    _proto.repeatDelay = function repeatDelay(value) {
+        if (arguments.length) {
+            var time = this._time;
+            this._rDelay = value;
+            $eef254727dd68eca$var$_onUpdateTotalDuration(this);
+            return time ? this.time(time) : this;
+        }
+        return this._rDelay;
+    };
+    _proto.yoyo = function yoyo(value) {
+        if (arguments.length) {
+            this._yoyo = value;
+            return this;
+        }
+        return this._yoyo;
+    };
+    _proto.seek = function seek(position, suppressEvents) {
+        return this.totalTime($eef254727dd68eca$var$_parsePosition(this, position), $eef254727dd68eca$var$_isNotFalse(suppressEvents));
+    };
+    _proto.restart = function restart(includeDelay, suppressEvents) {
+        return this.play().totalTime(includeDelay ? -this._delay : 0, $eef254727dd68eca$var$_isNotFalse(suppressEvents));
+    };
+    _proto.play = function play(from, suppressEvents) {
+        from != null && this.seek(from, suppressEvents);
+        return this.reversed(false).paused(false);
+    };
+    _proto.reverse = function reverse(from, suppressEvents) {
+        from != null && this.seek(from || this.totalDuration(), suppressEvents);
+        return this.reversed(true).paused(false);
+    };
+    _proto.pause = function pause(atTime, suppressEvents) {
+        atTime != null && this.seek(atTime, suppressEvents);
+        return this.paused(true);
+    };
+    _proto.resume = function resume() {
+        return this.paused(false);
+    };
+    _proto.reversed = function reversed(value) {
+        if (arguments.length) {
+            !!value !== this.reversed() && this.timeScale(-this._rts || (value ? -$eef254727dd68eca$var$_tinyNum : 0)); // in case timeScale is zero, reversing would have no effect so we use _tinyNum.
+            return this;
+        }
+        return this._rts < 0;
+    };
+    _proto.invalidate = function invalidate() {
+        this._initted = this._act = 0;
+        this._zTime = -$eef254727dd68eca$var$_tinyNum;
+        return this;
+    };
+    _proto.isActive = function isActive() {
+        var parent = this.parent || this._dp, start = this._start, rawTime;
+        return !!(!parent || this._ts && this._initted && parent.isActive() && (rawTime = parent.rawTime(true)) >= start && rawTime < this.endTime(true) - $eef254727dd68eca$var$_tinyNum);
+    };
+    _proto.eventCallback = function eventCallback(type, callback, params) {
+        var vars = this.vars;
+        if (arguments.length > 1) {
+            if (!callback) delete vars[type];
+            else {
+                vars[type] = callback;
+                params && (vars[type + "Params"] = params);
+                type === "onUpdate" && (this._onUpdate = callback);
+            }
+            return this;
+        }
+        return vars[type];
+    };
+    _proto.then = function then(onFulfilled) {
+        var self = this;
+        return new Promise(function(resolve) {
+            var f = $eef254727dd68eca$var$_isFunction(onFulfilled) ? onFulfilled : $eef254727dd68eca$var$_passThrough, _resolve = function _resolve() {
+                var _then = self.then;
+                self.then = null; // temporarily null the then() method to avoid an infinite loop (see https://github.com/greensock/GSAP/issues/322)
+                $eef254727dd68eca$var$_isFunction(f) && (f = f(self)) && (f.then || f === self) && (self.then = _then);
+                resolve(f);
+                self.then = _then;
+            };
+            if (self._initted && self.totalProgress() === 1 && self._ts >= 0 || !self._tTime && self._ts < 0) _resolve();
+            else self._prom = _resolve;
+        });
+    };
+    _proto.kill = function kill() {
+        $eef254727dd68eca$var$_interrupt(this);
+    };
+    return Animation;
+}();
+$eef254727dd68eca$export$dc2b19673bb53610($eef254727dd68eca$export$c35d437ae5945fcd.prototype, {
+    _time: 0,
+    _start: 0,
+    _end: 0,
+    _tTime: 0,
+    _tDur: 0,
+    _dirty: 0,
+    _repeat: 0,
+    _yoyo: false,
+    parent: null,
+    _initted: false,
+    _rDelay: 0,
+    _ts: 1,
+    _dp: 0,
+    ratio: 0,
+    _zTime: -$eef254727dd68eca$var$_tinyNum,
+    _prom: 0,
+    _ps: false,
+    _rts: 1
+});
+var $eef254727dd68eca$export$e6a97ba2cae5bb94 = /*#__PURE__*/ function(_Animation) {
+    $eef254727dd68eca$var$_inheritsLoose(Timeline, _Animation);
+    function Timeline(vars, position) {
+        var _this;
+        if (vars === void 0) vars = {};
+        _this = _Animation.call(this, vars) || this;
+        _this.labels = {};
+        _this.smoothChildTiming = !!vars.smoothChildTiming;
+        _this.autoRemoveChildren = !!vars.autoRemoveChildren;
+        _this._sort = $eef254727dd68eca$var$_isNotFalse(vars.sortChildren);
+        $eef254727dd68eca$var$_globalTimeline && $eef254727dd68eca$var$_addToTimeline(vars.parent || $eef254727dd68eca$var$_globalTimeline, $eef254727dd68eca$var$_assertThisInitialized(_this), position);
+        vars.reversed && _this.reverse();
+        vars.paused && _this.paused(true);
+        vars.scrollTrigger && $eef254727dd68eca$var$_scrollTrigger($eef254727dd68eca$var$_assertThisInitialized(_this), vars.scrollTrigger);
+        return _this;
+    }
+    var _proto2 = Timeline.prototype;
+    _proto2.to = function to(targets, vars, position) {
+        $eef254727dd68eca$var$_createTweenType(0, arguments, this);
+        return this;
+    };
+    _proto2.from = function from(targets, vars, position) {
+        $eef254727dd68eca$var$_createTweenType(1, arguments, this);
+        return this;
+    };
+    _proto2.fromTo = function fromTo(targets, fromVars, toVars, position) {
+        $eef254727dd68eca$var$_createTweenType(2, arguments, this);
+        return this;
+    };
+    _proto2.set = function set(targets, vars, position) {
+        vars.duration = 0;
+        vars.parent = this;
+        $eef254727dd68eca$var$_inheritDefaults(vars).repeatDelay || (vars.repeat = 0);
+        vars.immediateRender = !!vars.immediateRender;
+        new $eef254727dd68eca$export$208a41d6b4e37b97(targets, vars, $eef254727dd68eca$var$_parsePosition(this, position), 1);
+        return this;
+    };
+    _proto2.call = function call(callback, params, position) {
+        return $eef254727dd68eca$var$_addToTimeline(this, $eef254727dd68eca$export$208a41d6b4e37b97.delayedCall(0, callback, params), position);
+    } //ONLY for backward compatibility! Maybe delete?
+    ;
+    _proto2.staggerTo = function staggerTo(targets, duration, vars, stagger, position, onCompleteAll, onCompleteAllParams) {
+        vars.duration = duration;
+        vars.stagger = vars.stagger || stagger;
+        vars.onComplete = onCompleteAll;
+        vars.onCompleteParams = onCompleteAllParams;
+        vars.parent = this;
+        new $eef254727dd68eca$export$208a41d6b4e37b97(targets, vars, $eef254727dd68eca$var$_parsePosition(this, position));
+        return this;
+    };
+    _proto2.staggerFrom = function staggerFrom(targets, duration, vars, stagger, position, onCompleteAll, onCompleteAllParams) {
+        vars.runBackwards = 1;
+        $eef254727dd68eca$var$_inheritDefaults(vars).immediateRender = $eef254727dd68eca$var$_isNotFalse(vars.immediateRender);
+        return this.staggerTo(targets, duration, vars, stagger, position, onCompleteAll, onCompleteAllParams);
+    };
+    _proto2.staggerFromTo = function staggerFromTo(targets, duration, fromVars, toVars, stagger, position, onCompleteAll, onCompleteAllParams) {
+        toVars.startAt = fromVars;
+        $eef254727dd68eca$var$_inheritDefaults(toVars).immediateRender = $eef254727dd68eca$var$_isNotFalse(toVars.immediateRender);
+        return this.staggerTo(targets, duration, toVars, stagger, position, onCompleteAll, onCompleteAllParams);
+    };
+    _proto2.render = function render(totalTime, suppressEvents, force) {
+        var prevTime = this._time, tDur = this._dirty ? this.totalDuration() : this._tDur, dur = this._dur, tTime = totalTime <= 0 ? 0 : $eef254727dd68eca$var$_roundPrecise(totalTime), // if a paused timeline is resumed (or its _start is updated for another reason...which rounds it), that could result in the playhead shifting a **tiny** amount and a zero-duration child at that spot may get rendered at a different ratio, like its totalTime in render() may be 1e-17 instead of 0, for example.
+        crossingStart = this._zTime < 0 !== totalTime < 0 && (this._initted || !dur), time, child, next, iteration, cycleDuration, prevPaused, pauseTween, timeScale, prevStart, prevIteration, yoyo, isYoyo;
+        this !== $eef254727dd68eca$var$_globalTimeline && tTime > tDur && totalTime >= 0 && (tTime = tDur);
+        if (tTime !== this._tTime || force || crossingStart) {
+            if (prevTime !== this._time && dur) {
+                //if totalDuration() finds a child with a negative startTime and smoothChildTiming is true, things get shifted around internally so we need to adjust the time accordingly. For example, if a tween starts at -30 we must shift EVERYTHING forward 30 seconds and move this timeline's startTime backward by 30 seconds so that things align with the playhead (no jump).
+                tTime += this._time - prevTime;
+                totalTime += this._time - prevTime;
+            }
+            time = tTime;
+            prevStart = this._start;
+            timeScale = this._ts;
+            prevPaused = !timeScale;
+            if (crossingStart) {
+                dur || (prevTime = this._zTime); //when the playhead arrives at EXACTLY time 0 (right on top) of a zero-duration timeline, we need to discern if events are suppressed so that when the playhead moves again (next time), it'll trigger the callback. If events are NOT suppressed, obviously the callback would be triggered in this render. Basically, the callback should fire either when the playhead ARRIVES or LEAVES this exact spot, not both. Imagine doing a timeline.seek(0) and there's a callback that sits at 0. Since events are suppressed on that seek() by default, nothing will fire, but when the playhead moves off of that position, the callback should fire. This behavior is what people intuitively expect.
+                (totalTime || !suppressEvents) && (this._zTime = totalTime);
+            }
+            if (this._repeat) {
+                //adjust the time for repeats and yoyos
+                yoyo = this._yoyo;
+                cycleDuration = dur + this._rDelay;
+                if (this._repeat < -1 && totalTime < 0) return this.totalTime(cycleDuration * 100 + totalTime, suppressEvents, force);
+                time = $eef254727dd68eca$var$_roundPrecise(tTime % cycleDuration); //round to avoid floating point errors. (4 % 0.8 should be 0 but some browsers report it as 0.79999999!)
+                if (tTime === tDur) {
+                    // the tDur === tTime is for edge cases where there's a lengthy decimal on the duration and it may reach the very end but the time is rendered as not-quite-there (remember, tDur is rounded to 4 decimals whereas dur isn't)
+                    iteration = this._repeat;
+                    time = dur;
+                } else {
+                    iteration = ~~(tTime / cycleDuration);
+                    if (iteration && iteration === tTime / cycleDuration) {
+                        time = dur;
+                        iteration--;
+                    }
+                    time > dur && (time = dur);
+                }
+                prevIteration = $eef254727dd68eca$var$_animationCycle(this._tTime, cycleDuration);
+                !prevTime && this._tTime && prevIteration !== iteration && (prevIteration = iteration); // edge case - if someone does addPause() at the very beginning of a repeating timeline, that pause is technically at the same spot as the end which causes this._time to get set to 0 when the totalTime would normally place the playhead at the end. See https://greensock.com/forums/topic/23823-closing-nav-animation-not-working-on-ie-and-iphone-6-maybe-other-older-browser/?tab=comments#comment-113005
+                if (yoyo && iteration & 1) {
+                    time = dur - time;
+                    isYoyo = 1;
+                }
+                /*
+        make sure children at the end/beginning of the timeline are rendered properly. If, for example,
+        a 3-second long timeline rendered at 2.9 seconds previously, and now renders at 3.2 seconds (which
+        would get translated to 2.8 seconds if the timeline yoyos or 0.2 seconds if it just repeats), there
+        could be a callback or a short tween that's at 2.95 or 3 seconds in which wouldn't render. So
+        we need to push the timeline to the end (and/or beginning depending on its yoyo value). Also we must
+        ensure that zero-duration tweens at the very beginning or end of the Timeline work.
+        */ if (iteration !== prevIteration && !this._lock) {
+                    var rewinding = yoyo && prevIteration & 1, doesWrap = rewinding === (yoyo && iteration & 1);
+                    iteration < prevIteration && (rewinding = !rewinding);
+                    prevTime = rewinding ? 0 : dur;
+                    this._lock = 1;
+                    this.render(prevTime || (isYoyo ? 0 : $eef254727dd68eca$var$_roundPrecise(iteration * cycleDuration)), suppressEvents, !dur)._lock = 0;
+                    this._tTime = tTime; // if a user gets the iteration() inside the onRepeat, for example, it should be accurate.
+                    !suppressEvents && this.parent && $eef254727dd68eca$var$_callback(this, "onRepeat");
+                    this.vars.repeatRefresh && !isYoyo && (this.invalidate()._lock = 1);
+                    if (prevTime && prevTime !== this._time || prevPaused !== !this._ts || this.vars.onRepeat && !this.parent && !this._act) // if prevTime is 0 and we render at the very end, _time will be the end, thus won't match. So in this edge case, prevTime won't match _time but that's okay. If it gets killed in the onRepeat, eject as well.
+                    return this;
+                    dur = this._dur; // in case the duration changed in the onRepeat
+                    tDur = this._tDur;
+                    if (doesWrap) {
+                        this._lock = 2;
+                        prevTime = rewinding ? dur : -0.0001;
+                        this.render(prevTime, true);
+                        this.vars.repeatRefresh && !isYoyo && this.invalidate();
+                    }
+                    this._lock = 0;
+                    if (!this._ts && !prevPaused) return this;
+                     //in order for yoyoEase to work properly when there's a stagger, we must swap out the ease in each sub-tween.
+                    $eef254727dd68eca$var$_propagateYoyoEase(this, isYoyo);
+                }
+            }
+            if (this._hasPause && !this._forcing && this._lock < 2) {
+                pauseTween = $eef254727dd68eca$var$_findNextPauseTween(this, $eef254727dd68eca$var$_roundPrecise(prevTime), $eef254727dd68eca$var$_roundPrecise(time));
+                if (pauseTween) tTime -= time - (time = pauseTween._start);
+            }
+            this._tTime = tTime;
+            this._time = time;
+            this._act = !timeScale; //as long as it's not paused, force it to be active so that if the user renders independent of the parent timeline, it'll be forced to re-render on the next tick.
+            if (!this._initted) {
+                this._onUpdate = this.vars.onUpdate;
+                this._initted = 1;
+                this._zTime = totalTime;
+                prevTime = 0; // upon init, the playhead should always go forward; someone could invalidate() a completed timeline and then if they restart(), that would make child tweens render in reverse order which could lock in the wrong starting values if they build on each other, like tl.to(obj, {x: 100}).to(obj, {x: 0}).
+            }
+            if (!prevTime && time && !suppressEvents) {
+                $eef254727dd68eca$var$_callback(this, "onStart");
+                if (this._tTime !== tTime) // in case the onStart triggered a render at a different spot, eject. Like if someone did animation.pause(0.5) or something inside the onStart.
+                return this;
+            }
+            if (time >= prevTime && totalTime >= 0) {
+                child = this._first;
+                while(child){
+                    next = child._next;
+                    if ((child._act || time >= child._start) && child._ts && pauseTween !== child) {
+                        if (child.parent !== this) // an extreme edge case - the child's render could do something like kill() the "next" one in the linked list, or reparent it. In that case we must re-initiate the whole render to be safe.
+                        return this.render(totalTime, suppressEvents, force);
+                        child.render(child._ts > 0 ? (time - child._start) * child._ts : (child._dirty ? child.totalDuration() : child._tDur) + (time - child._start) * child._ts, suppressEvents, force);
+                        if (time !== this._time || !this._ts && !prevPaused) {
+                            //in case a tween pauses or seeks the timeline when rendering, like inside of an onUpdate/onComplete
+                            pauseTween = 0;
+                            next && (tTime += this._zTime = -$eef254727dd68eca$var$_tinyNum); // it didn't finish rendering, so flag zTime as negative so that so that the next time render() is called it'll be forced (to render any remaining children)
+                            break;
+                        }
+                    }
+                    child = next;
+                }
+            } else {
+                child = this._last;
+                var adjustedTime = totalTime < 0 ? totalTime : time; //when the playhead goes backward beyond the start of this timeline, we must pass that information down to the child animations so that zero-duration tweens know whether to render their starting or ending values.
+                while(child){
+                    next = child._prev;
+                    if ((child._act || adjustedTime <= child._end) && child._ts && pauseTween !== child) {
+                        if (child.parent !== this) // an extreme edge case - the child's render could do something like kill() the "next" one in the linked list, or reparent it. In that case we must re-initiate the whole render to be safe.
+                        return this.render(totalTime, suppressEvents, force);
+                        child.render(child._ts > 0 ? (adjustedTime - child._start) * child._ts : (child._dirty ? child.totalDuration() : child._tDur) + (adjustedTime - child._start) * child._ts, suppressEvents, force || $eef254727dd68eca$var$_reverting && (child._initted || child._startAt)); // if reverting, we should always force renders of initted tweens (but remember that .fromTo() or .from() may have a _startAt but not _initted yet). If, for example, a .fromTo() tween with a stagger (which creates an internal timeline) gets reverted BEFORE some of its child tweens render for the first time, it may not properly trigger them to revert.
+                        if (time !== this._time || !this._ts && !prevPaused) {
+                            //in case a tween pauses or seeks the timeline when rendering, like inside of an onUpdate/onComplete
+                            pauseTween = 0;
+                            next && (tTime += this._zTime = adjustedTime ? -$eef254727dd68eca$var$_tinyNum : $eef254727dd68eca$var$_tinyNum); // it didn't finish rendering, so adjust zTime so that so that the next time render() is called it'll be forced (to render any remaining children)
+                            break;
+                        }
+                    }
+                    child = next;
+                }
+            }
+            if (pauseTween && !suppressEvents) {
+                this.pause();
+                pauseTween.render(time >= prevTime ? 0 : -$eef254727dd68eca$var$_tinyNum)._zTime = time >= prevTime ? 1 : -1;
+                if (this._ts) {
+                    //the callback resumed playback! So since we may have held back the playhead due to where the pause is positioned, go ahead and jump to where it's SUPPOSED to be (if no pause happened).
+                    this._start = prevStart; //if the pause was at an earlier time and the user resumed in the callback, it could reposition the timeline (changing its startTime), throwing things off slightly, so we make sure the _start doesn't shift.
+                    $eef254727dd68eca$var$_setEnd(this);
+                    return this.render(totalTime, suppressEvents, force);
+                }
+            }
+            this._onUpdate && !suppressEvents && $eef254727dd68eca$var$_callback(this, "onUpdate", true);
+            if (tTime === tDur && this._tTime >= this.totalDuration() || !tTime && prevTime) {
+                if (prevStart === this._start || Math.abs(timeScale) !== Math.abs(this._ts)) {
+                    if (!this._lock) {
+                        // remember, a child's callback may alter this timeline's playhead or timeScale which is why we need to add some of these checks.
+                        (totalTime || !dur) && (tTime === tDur && this._ts > 0 || !tTime && this._ts < 0) && $eef254727dd68eca$var$_removeFromParent(this, 1); // don't remove if the timeline is reversed and the playhead isn't at 0, otherwise tl.progress(1).reverse() won't work. Only remove if the playhead is at the end and timeScale is positive, or if the playhead is at 0 and the timeScale is negative.
+                        if (!suppressEvents && !(totalTime < 0 && !prevTime) && (tTime || prevTime || !tDur)) {
+                            $eef254727dd68eca$var$_callback(this, tTime === tDur && totalTime >= 0 ? "onComplete" : "onReverseComplete", true);
+                            this._prom && !(tTime < tDur && this.timeScale() > 0) && this._prom();
+                        }
+                    }
+                }
+            }
+        }
+        return this;
+    };
+    _proto2.add = function add(child, position) {
+        var _this2 = this;
+        $eef254727dd68eca$var$_isNumber(position) || (position = $eef254727dd68eca$var$_parsePosition(this, position, child));
+        if (!(child instanceof $eef254727dd68eca$export$c35d437ae5945fcd)) {
+            if ($eef254727dd68eca$var$_isArray(child)) {
+                child.forEach(function(obj) {
+                    return _this2.add(obj, position);
+                });
+                return this;
+            }
+            if ($eef254727dd68eca$export$f664476fd67145ca(child)) return this.addLabel(child, position);
+            if ($eef254727dd68eca$var$_isFunction(child)) child = $eef254727dd68eca$export$208a41d6b4e37b97.delayedCall(0, child);
+            else return this;
+        }
+        return this !== child ? $eef254727dd68eca$var$_addToTimeline(this, child, position) : this; //don't allow a timeline to be added to itself as a child!
+    };
+    _proto2.getChildren = function getChildren(nested, tweens, timelines, ignoreBeforeTime) {
+        if (nested === void 0) nested = true;
+        if (tweens === void 0) tweens = true;
+        if (timelines === void 0) timelines = true;
+        if (ignoreBeforeTime === void 0) ignoreBeforeTime = -$eef254727dd68eca$var$_bigNum;
+        var a = [], child = this._first;
+        while(child){
+            if (child._start >= ignoreBeforeTime) {
+                if (child instanceof $eef254727dd68eca$export$208a41d6b4e37b97) tweens && a.push(child);
+                else {
+                    timelines && a.push(child);
+                    nested && a.push.apply(a, child.getChildren(true, tweens, timelines));
+                }
+            }
+            child = child._next;
+        }
+        return a;
+    };
+    _proto2.getById = function getById(id) {
+        var animations = this.getChildren(1, 1, 1), i = animations.length;
+        while(i--){
+            if (animations[i].vars.id === id) return animations[i];
+        }
+    };
+    _proto2.remove = function remove(child) {
+        if ($eef254727dd68eca$export$f664476fd67145ca(child)) return this.removeLabel(child);
+        if ($eef254727dd68eca$var$_isFunction(child)) return this.killTweensOf(child);
+        $eef254727dd68eca$export$cd008aa6cd8844e3(this, child);
+        if (child === this._recent) this._recent = this._last;
+        return $eef254727dd68eca$var$_uncache(this);
+    };
+    _proto2.totalTime = function totalTime(_totalTime2, suppressEvents) {
+        if (!arguments.length) return this._tTime;
+        this._forcing = 1;
+        if (!this._dp && this._ts) //special case for the global timeline (or any other that has no parent or detached parent).
+        this._start = $eef254727dd68eca$var$_roundPrecise($eef254727dd68eca$export$762ed8fbedb691e3.time - (this._ts > 0 ? _totalTime2 / this._ts : (this.totalDuration() - _totalTime2) / -this._ts));
+        _Animation.prototype.totalTime.call(this, _totalTime2, suppressEvents);
+        this._forcing = 0;
+        return this;
+    };
+    _proto2.addLabel = function addLabel(label, position) {
+        this.labels[label] = $eef254727dd68eca$var$_parsePosition(this, position);
+        return this;
+    };
+    _proto2.removeLabel = function removeLabel(label) {
+        delete this.labels[label];
+        return this;
+    };
+    _proto2.addPause = function addPause(position, callback, params) {
+        var t = $eef254727dd68eca$export$208a41d6b4e37b97.delayedCall(0, callback || $eef254727dd68eca$var$_emptyFunc, params);
+        t.data = "isPause";
+        this._hasPause = 1;
+        return $eef254727dd68eca$var$_addToTimeline(this, t, $eef254727dd68eca$var$_parsePosition(this, position));
+    };
+    _proto2.removePause = function removePause(position) {
+        var child = this._first;
+        position = $eef254727dd68eca$var$_parsePosition(this, position);
+        while(child){
+            if (child._start === position && child.data === "isPause") $eef254727dd68eca$var$_removeFromParent(child);
+            child = child._next;
+        }
+    };
+    _proto2.killTweensOf = function killTweensOf(targets, props, onlyActive) {
+        var tweens = this.getTweensOf(targets, onlyActive), i = tweens.length;
+        while(i--)$eef254727dd68eca$var$_overwritingTween !== tweens[i] && tweens[i].kill(targets, props);
+        return this;
+    };
+    _proto2.getTweensOf = function getTweensOf(targets, onlyActive) {
+        var a = [], parsedTargets = $eef254727dd68eca$export$45b10814cc054894(targets), child = this._first, isGlobalTime = $eef254727dd68eca$var$_isNumber(onlyActive), // a number is interpreted as a global time. If the animation spans
+        children;
+        while(child){
+            if (child instanceof $eef254727dd68eca$export$208a41d6b4e37b97) {
+                if ($eef254727dd68eca$var$_arrayContainsAny(child._targets, parsedTargets) && (isGlobalTime ? (!$eef254727dd68eca$var$_overwritingTween || child._initted && child._ts) && child.globalTime(0) <= onlyActive && child.globalTime(child.totalDuration()) > onlyActive : !onlyActive || child.isActive())) // note: if this is for overwriting, it should only be for tweens that aren't paused and are initted.
+                a.push(child);
+            } else if ((children = child.getTweensOf(parsedTargets, onlyActive)).length) a.push.apply(a, children);
+            child = child._next;
+        }
+        return a;
+    } // potential future feature - targets() on timelines
+    ;
+    _proto2.tweenTo = function tweenTo(position, vars) {
+        vars = vars || {};
+        var tl = this, endTime = $eef254727dd68eca$var$_parsePosition(tl, position), _vars = vars, startAt = _vars.startAt, _onStart = _vars.onStart, onStartParams = _vars.onStartParams, immediateRender = _vars.immediateRender, initted, tween = $eef254727dd68eca$export$208a41d6b4e37b97.to(tl, $eef254727dd68eca$export$dc2b19673bb53610({
+            ease: vars.ease || "none",
+            lazy: false,
+            immediateRender: false,
+            time: endTime,
+            overwrite: "auto",
+            duration: vars.duration || Math.abs((endTime - (startAt && "time" in startAt ? startAt.time : tl._time)) / tl.timeScale()) || $eef254727dd68eca$var$_tinyNum,
+            onStart: function onStart() {
+                tl.pause();
+                if (!initted) {
+                    var duration = vars.duration || Math.abs((endTime - (startAt && "time" in startAt ? startAt.time : tl._time)) / tl.timeScale());
+                    tween._dur !== duration && $eef254727dd68eca$var$_setDuration(tween, duration, 0, 1).render(tween._time, true, true);
+                    initted = 1;
+                }
+                _onStart && _onStart.apply(tween, onStartParams || []); //in case the user had an onStart in the vars - we don't want to overwrite it.
+            }
+        }, vars));
+        return immediateRender ? tween.render(0) : tween;
+    };
+    _proto2.tweenFromTo = function tweenFromTo(fromPosition, toPosition, vars) {
+        return this.tweenTo(toPosition, $eef254727dd68eca$export$dc2b19673bb53610({
+            startAt: {
+                time: $eef254727dd68eca$var$_parsePosition(this, fromPosition)
+            }
+        }, vars));
+    };
+    _proto2.recent = function recent() {
+        return this._recent;
+    };
+    _proto2.nextLabel = function nextLabel(afterTime) {
+        if (afterTime === void 0) afterTime = this._time;
+        return $eef254727dd68eca$var$_getLabelInDirection(this, $eef254727dd68eca$var$_parsePosition(this, afterTime));
+    };
+    _proto2.previousLabel = function previousLabel(beforeTime) {
+        if (beforeTime === void 0) beforeTime = this._time;
+        return $eef254727dd68eca$var$_getLabelInDirection(this, $eef254727dd68eca$var$_parsePosition(this, beforeTime), 1);
+    };
+    _proto2.currentLabel = function currentLabel(value) {
+        return arguments.length ? this.seek(value, true) : this.previousLabel(this._time + $eef254727dd68eca$var$_tinyNum);
+    };
+    _proto2.shiftChildren = function shiftChildren(amount, adjustLabels, ignoreBeforeTime) {
+        if (ignoreBeforeTime === void 0) ignoreBeforeTime = 0;
+        var child = this._first, labels = this.labels, p;
+        while(child){
+            if (child._start >= ignoreBeforeTime) {
+                child._start += amount;
+                child._end += amount;
+            }
+            child = child._next;
+        }
+        if (adjustLabels) {
+            for(p in labels)if (labels[p] >= ignoreBeforeTime) labels[p] += amount;
+        }
+        return $eef254727dd68eca$var$_uncache(this);
+    };
+    _proto2.invalidate = function invalidate(soft) {
+        var child = this._first;
+        this._lock = 0;
+        while(child){
+            child.invalidate(soft);
+            child = child._next;
+        }
+        return _Animation.prototype.invalidate.call(this, soft);
+    };
+    _proto2.clear = function clear(includeLabels) {
+        if (includeLabels === void 0) includeLabels = true;
+        var child = this._first, next;
+        while(child){
+            next = child._next;
+            this.remove(child);
+            child = next;
+        }
+        this._dp && (this._time = this._tTime = this._pTime = 0);
+        includeLabels && (this.labels = {});
+        return $eef254727dd68eca$var$_uncache(this);
+    };
+    _proto2.totalDuration = function totalDuration(value) {
+        var max = 0, self = this, child = self._last, prevStart = $eef254727dd68eca$var$_bigNum, prev, start, parent;
+        if (arguments.length) return self.timeScale((self._repeat < 0 ? self.duration() : self.totalDuration()) / (self.reversed() ? -value : value));
+        if (self._dirty) {
+            parent = self.parent;
+            while(child){
+                prev = child._prev; //record it here in case the tween changes position in the sequence...
+                child._dirty && child.totalDuration(); //could change the tween._startTime, so make sure the animation's cache is clean before analyzing it.
+                start = child._start;
+                if (start > prevStart && self._sort && child._ts && !self._lock) {
+                    //in case one of the tweens shifted out of order, it needs to be re-inserted into the correct position in the sequence
+                    self._lock = 1; //prevent endless recursive calls - there are methods that get triggered that check duration/totalDuration when we add().
+                    $eef254727dd68eca$var$_addToTimeline(self, child, start - child._delay, 1)._lock = 0;
+                } else prevStart = start;
+                if (start < 0 && child._ts) {
+                    //children aren't allowed to have negative startTimes unless smoothChildTiming is true, so adjust here if one is found.
+                    max -= start;
+                    if (!parent && !self._dp || parent && parent.smoothChildTiming) {
+                        self._start += start / self._ts;
+                        self._time -= start;
+                        self._tTime -= start;
+                    }
+                    self.shiftChildren(-start, false, -Infinity);
+                    prevStart = 0;
+                }
+                child._end > max && child._ts && (max = child._end);
+                child = prev;
+            }
+            $eef254727dd68eca$var$_setDuration(self, self === $eef254727dd68eca$var$_globalTimeline && self._time > max ? self._time : max, 1, 1);
+            self._dirty = 0;
+        }
+        return self._tDur;
+    };
+    Timeline.updateRoot = function updateRoot(time) {
+        if ($eef254727dd68eca$var$_globalTimeline._ts) {
+            $eef254727dd68eca$var$_lazySafeRender($eef254727dd68eca$var$_globalTimeline, $eef254727dd68eca$var$_parentToChildTotalTime(time, $eef254727dd68eca$var$_globalTimeline));
+            $eef254727dd68eca$var$_lastRenderedFrame = $eef254727dd68eca$export$762ed8fbedb691e3.frame;
+        }
+        if ($eef254727dd68eca$export$762ed8fbedb691e3.frame >= $eef254727dd68eca$var$_nextGCFrame) {
+            $eef254727dd68eca$var$_nextGCFrame += $eef254727dd68eca$export$4922bee768729a77.autoSleep || 120;
+            var child = $eef254727dd68eca$var$_globalTimeline._first;
+            if (!child || !child._ts) {
+                if ($eef254727dd68eca$export$4922bee768729a77.autoSleep && $eef254727dd68eca$export$762ed8fbedb691e3._listeners.length < 2) {
+                    while(child && !child._ts)child = child._next;
+                    child || $eef254727dd68eca$export$762ed8fbedb691e3.sleep();
+                }
+            }
+        }
+    };
+    return Timeline;
+}($eef254727dd68eca$export$c35d437ae5945fcd);
+$eef254727dd68eca$export$dc2b19673bb53610($eef254727dd68eca$export$e6a97ba2cae5bb94.prototype, {
+    _lock: 0,
+    _hasPause: 0,
+    _forcing: 0
+});
+var $eef254727dd68eca$var$_addComplexStringPropTween = function _addComplexStringPropTween(target, prop, start, end, setter, stringFilter, funcParam) {
+    //note: we call _addComplexStringPropTween.call(tweenInstance...) to ensure that it's scoped properly. We may call it from within a plugin too, thus "this" would refer to the plugin.
+    var pt = new $eef254727dd68eca$export$3a67f7f44b1e838a(this._pt, target, prop, 0, 1, $eef254727dd68eca$export$c5bc8e04394ecb2, null, setter), index = 0, matchIndex = 0, result, startNums, color, endNum, chunk, startNum, hasRandom, a;
+    pt.b = start;
+    pt.e = end;
+    start += ""; //ensure values are strings
+    end += "";
+    if (hasRandom = ~end.indexOf("random(")) end = $eef254727dd68eca$export$d5962a97e3cde94d(end);
+    if (stringFilter) {
+        a = [
+            start,
+            end
+        ];
+        stringFilter(a, target, prop); //pass an array with the starting and ending values and let the filter do whatever it needs to the values.
+        start = a[0];
+        end = a[1];
+    }
+    startNums = start.match($eef254727dd68eca$var$_complexStringNumExp) || [];
+    while(result = $eef254727dd68eca$var$_complexStringNumExp.exec(end)){
+        endNum = result[0];
+        chunk = end.substring(index, result.index);
+        if (color) color = (color + 1) % 5;
+        else if (chunk.substr(-5) === "rgba(") color = 1;
+        if (endNum !== startNums[matchIndex++]) {
+            startNum = parseFloat(startNums[matchIndex - 1]) || 0; //these nested PropTweens are handled in a special way - we'll never actually call a render or setter method on them. We'll just loop through them in the parent complex string PropTween's render method.
+            pt._pt = {
+                _next: pt._pt,
+                p: chunk || matchIndex === 1 ? chunk : ",",
+                //note: SVG spec allows omission of comma/space when a negative sign is wedged between two numbers, like 2.5-5.3 instead of 2.5,-5.3 but when tweening, the negative value may switch to positive, so we insert the comma just in case.
+                s: startNum,
+                c: endNum.charAt(1) === "=" ? $eef254727dd68eca$export$dac762bc6301b560(startNum, endNum) - startNum : parseFloat(endNum) - startNum,
+                m: color && color < 4 ? Math.round : 0
+            };
+            index = $eef254727dd68eca$var$_complexStringNumExp.lastIndex;
+        }
+    }
+    pt.c = index < end.length ? end.substring(index, end.length) : ""; //we use the "c" of the PropTween to store the final part of the string (after the last number)
+    pt.fp = funcParam;
+    if ($eef254727dd68eca$export$5a680e28b0b61bc.test(end) || hasRandom) pt.e = 0; //if the end string contains relative values or dynamic random(...) values, delete the end it so that on the final render we don't actually set it to the string with += or -= characters (forces it to use the calculated value).
+    this._pt = pt; //start the linked list with this new PropTween. Remember, we call _addComplexStringPropTween.call(tweenInstance...) to ensure that it's scoped properly. We may call it from within a plugin too, thus "this" would refer to the plugin.
+    return pt;
+}, $eef254727dd68eca$var$_addPropTween = function _addPropTween(target, prop, start, end, index, targets, modifier, stringFilter, funcParam, optional) {
+    $eef254727dd68eca$var$_isFunction(end) && (end = end(index || 0, target, targets));
+    var currentValue = target[prop], parsedStart = start !== "get" ? start : !$eef254727dd68eca$var$_isFunction(currentValue) ? currentValue : funcParam ? target[prop.indexOf("set") || !$eef254727dd68eca$var$_isFunction(target["get" + prop.substr(3)]) ? prop : "get" + prop.substr(3)](funcParam) : target[prop](), setter = !$eef254727dd68eca$var$_isFunction(currentValue) ? $eef254727dd68eca$var$_setterPlain : funcParam ? $eef254727dd68eca$var$_setterFuncWithParam : $eef254727dd68eca$var$_setterFunc, pt;
+    if ($eef254727dd68eca$export$f664476fd67145ca(end)) {
+        if (~end.indexOf("random(")) end = $eef254727dd68eca$export$d5962a97e3cde94d(end);
+        if (end.charAt(1) === "=") {
+            pt = $eef254727dd68eca$export$dac762bc6301b560(parsedStart, end) + ($eef254727dd68eca$export$65f2564e9a9b9222(parsedStart) || 0);
+            if (pt || pt === 0) // to avoid isNaN, like if someone passes in a value like "!= whatever"
+            end = pt;
+        }
+    }
+    if (!optional || parsedStart !== end || $eef254727dd68eca$var$_forceAllPropTweens) {
+        if (!isNaN(parsedStart * end) && end !== "") {
+            // fun fact: any number multiplied by "" is evaluated as the number 0!
+            pt = new $eef254727dd68eca$export$3a67f7f44b1e838a(this._pt, target, prop, +parsedStart || 0, end - (parsedStart || 0), typeof currentValue === "boolean" ? $eef254727dd68eca$var$_renderBoolean : $eef254727dd68eca$var$_renderPlain, 0, setter);
+            funcParam && (pt.fp = funcParam);
+            modifier && pt.modifier(modifier, this, target);
+            return this._pt = pt;
+        }
+        !currentValue && !(prop in target) && $eef254727dd68eca$export$7fb54635790b59a5(prop, end);
+        return $eef254727dd68eca$var$_addComplexStringPropTween.call(this, target, prop, parsedStart, end, setter, stringFilter || $eef254727dd68eca$export$4922bee768729a77.stringFilter, funcParam);
+    }
+}, //creates a copy of the vars object and processes any function-based values (putting the resulting values directly into the copy) as well as strings with "random()" in them. It does NOT process relative values.
+$eef254727dd68eca$var$_processVars = function _processVars(vars, index, target, targets, tween) {
+    $eef254727dd68eca$var$_isFunction(vars) && (vars = $eef254727dd68eca$var$_parseFuncOrString(vars, tween, index, target, targets));
+    if (!$eef254727dd68eca$var$_isObject(vars) || vars.style && vars.nodeType || $eef254727dd68eca$var$_isArray(vars) || $eef254727dd68eca$var$_isTypedArray(vars)) return $eef254727dd68eca$export$f664476fd67145ca(vars) ? $eef254727dd68eca$var$_parseFuncOrString(vars, tween, index, target, targets) : vars;
+    var copy = {}, p;
+    for(p in vars)copy[p] = $eef254727dd68eca$var$_parseFuncOrString(vars[p], tween, index, target, targets);
+    return copy;
+}, $eef254727dd68eca$export$5c457b74208010cf = function _checkPlugin(property, vars, tween, index, target, targets) {
+    var plugin, pt, ptLookup, i;
+    if ($eef254727dd68eca$export$d305d8ec5d7c26b8[property] && (plugin = new $eef254727dd68eca$export$d305d8ec5d7c26b8[property]()).init(target, plugin.rawVars ? vars[property] : $eef254727dd68eca$var$_processVars(vars[property], index, target, targets, tween), tween, index, targets) !== false) {
+        tween._pt = pt = new $eef254727dd68eca$export$3a67f7f44b1e838a(tween._pt, target, property, 0, 1, plugin.render, plugin, 0, plugin.priority);
+        if (tween !== $eef254727dd68eca$var$_quickTween) {
+            ptLookup = tween._ptLookup[tween._targets.indexOf(target)]; //note: we can't use tween._ptLookup[index] because for staggered tweens, the index from the fullTargets array won't match what it is in each individual tween that spawns from the stagger.
+            i = plugin._props.length;
+            while(i--)ptLookup[plugin._props[i]] = pt;
+        }
+    }
+    return plugin;
+}, $eef254727dd68eca$var$_overwritingTween, //store a reference temporarily so we can avoid overwriting itself.
+$eef254727dd68eca$var$_forceAllPropTweens, $eef254727dd68eca$var$_initTween = function _initTween(tween, time, tTime) {
+    var vars = tween.vars, ease = vars.ease, startAt = vars.startAt, immediateRender = vars.immediateRender, lazy = vars.lazy, onUpdate = vars.onUpdate, onUpdateParams = vars.onUpdateParams, callbackScope = vars.callbackScope, runBackwards = vars.runBackwards, yoyoEase = vars.yoyoEase, keyframes = vars.keyframes, autoRevert = vars.autoRevert, dur = tween._dur, prevStartAt = tween._startAt, targets = tween._targets, parent = tween.parent, fullTargets = parent && parent.data === "nested" ? parent.vars.targets : targets, autoOverwrite = tween._overwrite === "auto" && !$eef254727dd68eca$var$_suppressOverwrites, tl = tween.timeline, cleanVars, i, p, pt, target, hasPriority, gsData, harness, plugin, ptLookup, index, harnessVars, overwritten;
+    tl && (!keyframes || !ease) && (ease = "none");
+    tween._ease = $eef254727dd68eca$var$_parseEase(ease, $eef254727dd68eca$var$_defaults.ease);
+    tween._yEase = yoyoEase ? $eef254727dd68eca$var$_invertEase($eef254727dd68eca$var$_parseEase(yoyoEase === true ? ease : yoyoEase, $eef254727dd68eca$var$_defaults.ease)) : 0;
+    if (yoyoEase && tween._yoyo && !tween._repeat) {
+        //there must have been a parent timeline with yoyo:true that is currently in its yoyo phase, so flip the eases.
+        yoyoEase = tween._yEase;
+        tween._yEase = tween._ease;
+        tween._ease = yoyoEase;
+    }
+    tween._from = !tl && !!vars.runBackwards; //nested timelines should never run backwards - the backwards-ness is in the child tweens.
+    if (!tl || keyframes && !vars.stagger) {
+        //if there's an internal timeline, skip all the parsing because we passed that task down the chain.
+        harness = targets[0] ? $eef254727dd68eca$export$8b9be379d2de2a39(targets[0]).harness : 0;
+        harnessVars = harness && vars[harness.prop]; //someone may need to specify CSS-specific values AND non-CSS values, like if the element has an "x" property plus it's a standard DOM element. We allow people to distinguish by wrapping plugin-specific stuff in a css:{} object for example.
+        cleanVars = $eef254727dd68eca$var$_copyExcluding(vars, $eef254727dd68eca$var$_reservedProps);
+        if (prevStartAt) {
+            prevStartAt._zTime < 0 && prevStartAt.progress(1); // in case it's a lazy startAt that hasn't rendered yet.
+            time < 0 && runBackwards && immediateRender && !autoRevert ? prevStartAt.render(-1, true) : prevStartAt.revert(runBackwards && dur ? $eef254727dd68eca$var$_revertConfigNoKill : $eef254727dd68eca$var$_startAtRevertConfig); // if it's a "startAt" (not "from()" or runBackwards: true), we only need to do a shallow revert (keep transforms cached in CSSPlugin)
+            // don't just _removeFromParent(prevStartAt.render(-1, true)) because that'll leave inline styles. We're creating a new _startAt for "startAt" tweens that re-capture things to ensure that if the pre-tween values changed since the tween was created, they're recorded.
+            prevStartAt._lazy = 0;
+        }
+        if (startAt) {
+            $eef254727dd68eca$var$_removeFromParent(tween._startAt = $eef254727dd68eca$export$208a41d6b4e37b97.set(targets, $eef254727dd68eca$export$dc2b19673bb53610({
+                data: "isStart",
+                overwrite: false,
+                parent: parent,
+                immediateRender: true,
+                lazy: $eef254727dd68eca$var$_isNotFalse(lazy),
+                startAt: null,
+                delay: 0,
+                onUpdate: onUpdate,
+                onUpdateParams: onUpdateParams,
+                callbackScope: callbackScope,
+                stagger: 0
+            }, startAt))); //copy the properties/values into a new object to avoid collisions, like var to = {x:0}, from = {x:500}; timeline.fromTo(e, from, to).fromTo(e, to, from);
+            time < 0 && ($eef254727dd68eca$var$_reverting || !immediateRender && !autoRevert) && tween._startAt.revert($eef254727dd68eca$var$_revertConfigNoKill); // rare edge case, like if a render is forced in the negative direction of a non-initted tween.
+            if (immediateRender) {
+                if (dur && time <= 0 && tTime <= 0) {
+                    // check tTime here because in the case of a yoyo tween whose playhead gets pushed to the end like tween.progress(1), we should allow it through so that the onComplete gets fired properly.
+                    time && (tween._zTime = time);
+                    return; //we skip initialization here so that overwriting doesn't occur until the tween actually begins. Otherwise, if you create several immediateRender:true tweens of the same target/properties to drop into a Timeline, the last one created would overwrite the first ones because they didn't get placed into the timeline yet before the first render occurs and kicks in overwriting.
+                }
+            }
+        } else if (runBackwards && dur) //from() tweens must be handled uniquely: their beginning values must be rendered but we don't want overwriting to occur yet (when time is still 0). Wait until the tween actually begins before doing all the routines like overwriting. At that time, we should render at the END of the tween to ensure that things initialize correctly (remember, from() tweens go backwards)
+        {
+            if (!prevStartAt) {
+                time && (immediateRender = false); //in rare cases (like if a from() tween runs and then is invalidate()-ed), immediateRender could be true but the initial forced-render gets skipped, so there's no need to force the render in this context when the _time is greater than 0
+                p = $eef254727dd68eca$export$dc2b19673bb53610({
+                    overwrite: false,
+                    data: "isFromStart",
+                    //we tag the tween with as "isFromStart" so that if [inside a plugin] we need to only do something at the very END of a tween, we have a way of identifying this tween as merely the one that's setting the beginning values for a "from()" tween. For example, clearProps in CSSPlugin should only get applied at the very END of a tween and without this tag, from(...{height:100, clearProps:"height", delay:1}) would wipe the height at the beginning of the tween and after 1 second, it'd kick back in.
+                    lazy: immediateRender && $eef254727dd68eca$var$_isNotFalse(lazy),
+                    immediateRender: immediateRender,
+                    //zero-duration tweens render immediately by default, but if we're not specifically instructed to render this tween immediately, we should skip this and merely _init() to record the starting values (rendering them immediately would push them to completion which is wasteful in that case - we'd have to render(-1) immediately after)
+                    stagger: 0,
+                    parent: parent //ensures that nested tweens that had a stagger are handled properly, like gsap.from(".class", {y:gsap.utils.wrap([-100,100])})
+                }, cleanVars);
+                harnessVars && (p[harness.prop] = harnessVars); // in case someone does something like .from(..., {css:{}})
+                $eef254727dd68eca$var$_removeFromParent(tween._startAt = $eef254727dd68eca$export$208a41d6b4e37b97.set(targets, p));
+                time < 0 && ($eef254727dd68eca$var$_reverting ? tween._startAt.revert($eef254727dd68eca$var$_revertConfigNoKill) : tween._startAt.render(-1, true));
+                tween._zTime = time;
+                if (!immediateRender) _initTween(tween._startAt, $eef254727dd68eca$var$_tinyNum, $eef254727dd68eca$var$_tinyNum); //ensures that the initial values are recorded
+                else if (!time) return;
+            }
+        }
+        tween._pt = tween._ptCache = 0;
+        lazy = dur && $eef254727dd68eca$var$_isNotFalse(lazy) || lazy && !dur;
+        for(i = 0; i < targets.length; i++){
+            target = targets[i];
+            gsData = target._gsap || $eef254727dd68eca$var$_harness(targets)[i]._gsap;
+            tween._ptLookup[i] = ptLookup = {};
+            $eef254727dd68eca$var$_lazyLookup[gsData.id] && $eef254727dd68eca$var$_lazyTweens.length && $eef254727dd68eca$var$_lazyRender(); //if other tweens of the same target have recently initted but haven't rendered yet, we've got to force the render so that the starting values are correct (imagine populating a timeline with a bunch of sequential tweens and then jumping to the end)
+            index = fullTargets === targets ? i : fullTargets.indexOf(target);
+            if (harness && (plugin = new harness()).init(target, harnessVars || cleanVars, tween, index, fullTargets) !== false) {
+                tween._pt = pt = new $eef254727dd68eca$export$3a67f7f44b1e838a(tween._pt, target, plugin.name, 0, 1, plugin.render, plugin, 0, plugin.priority);
+                plugin._props.forEach(function(name) {
+                    ptLookup[name] = pt;
+                });
+                plugin.priority && (hasPriority = 1);
+            }
+            if (!harness || harnessVars) {
+                for(p in cleanVars)if ($eef254727dd68eca$export$d305d8ec5d7c26b8[p] && (plugin = $eef254727dd68eca$export$5c457b74208010cf(p, cleanVars, tween, index, target, fullTargets))) plugin.priority && (hasPriority = 1);
+                else ptLookup[p] = pt = $eef254727dd68eca$var$_addPropTween.call(tween, target, p, "get", cleanVars[p], index, fullTargets, 0, vars.stringFilter);
+            }
+            tween._op && tween._op[i] && tween.kill(target, tween._op[i]);
+            if (autoOverwrite && tween._pt) {
+                $eef254727dd68eca$var$_overwritingTween = tween;
+                $eef254727dd68eca$var$_globalTimeline.killTweensOf(target, ptLookup, tween.globalTime(time)); // make sure the overwriting doesn't overwrite THIS tween!!!
+                overwritten = !tween.parent;
+                $eef254727dd68eca$var$_overwritingTween = 0;
+            }
+            tween._pt && lazy && ($eef254727dd68eca$var$_lazyLookup[gsData.id] = 1);
+        }
+        hasPriority && $eef254727dd68eca$export$eed5824f53346d57(tween);
+        tween._onInit && tween._onInit(tween); //plugins like RoundProps must wait until ALL of the PropTweens are instantiated. In the plugin's init() function, it sets the _onInit on the tween instance. May not be pretty/intuitive, but it's fast and keeps file size down.
+    }
+    tween._onUpdate = onUpdate;
+    tween._initted = (!tween._op || tween._pt) && !overwritten; // if overwrittenProps resulted in the entire tween being killed, do NOT flag it as initted or else it may render for one tick.
+    keyframes && time <= 0 && tl.render($eef254727dd68eca$var$_bigNum, true, true); // if there's a 0% keyframe, it'll render in the "before" state for any staggered/delayed animations thus when the following tween initializes, it'll use the "before" state instead of the "after" state as the initial values.
+}, $eef254727dd68eca$var$_updatePropTweens = function _updatePropTweens(tween, property, value, start, startIsRelative, ratio, time) {
+    var ptCache = (tween._pt && tween._ptCache || (tween._ptCache = {}))[property], pt, rootPT, lookup, i;
+    if (!ptCache) {
+        ptCache = tween._ptCache[property] = [];
+        lookup = tween._ptLookup;
+        i = tween._targets.length;
+        while(i--){
+            pt = lookup[i][property];
+            if (pt && pt.d && pt.d._pt) {
+                // it's a plugin, so find the nested PropTween
+                pt = pt.d._pt;
+                while(pt && pt.p !== property && pt.fp !== property)// "fp" is functionParam for things like setting CSS variables which require .setProperty("--var-name", value)
+                pt = pt._next;
+            }
+            if (!pt) {
+                // there is no PropTween associated with that property, so we must FORCE one to be created and ditch out of this
+                // if the tween has other properties that already rendered at new positions, we'd normally have to rewind to put them back like tween.render(0, true) before forcing an _initTween(), but that can create another edge case like tweening a timeline's progress would trigger onUpdates to fire which could move other things around. It's better to just inform users that .resetTo() should ONLY be used for tweens that already have that property. For example, you can't gsap.to(...{ y: 0 }) and then tween.restTo("x", 200) for example.
+                $eef254727dd68eca$var$_forceAllPropTweens = 1; // otherwise, when we _addPropTween() and it finds no change between the start and end values, it skips creating a PropTween (for efficiency...why tween when there's no difference?) but in this case we NEED that PropTween created so we can edit it.
+                tween.vars[property] = "+=0";
+                $eef254727dd68eca$var$_initTween(tween, time);
+                $eef254727dd68eca$var$_forceAllPropTweens = 0;
+                return 1;
+            }
+            ptCache.push(pt);
+        }
+    }
+    i = ptCache.length;
+    while(i--){
+        rootPT = ptCache[i];
+        pt = rootPT._pt || rootPT; // complex values may have nested PropTweens. We only accommodate the FIRST value.
+        pt.s = (start || start === 0) && !startIsRelative ? start : pt.s + (start || 0) + ratio * pt.c;
+        pt.c = value - pt.s;
+        rootPT.e && (rootPT.e = $eef254727dd68eca$export$9c8d725d65e13f94(value) + $eef254727dd68eca$export$65f2564e9a9b9222(rootPT.e)); // mainly for CSSPlugin (end value)
+        rootPT.b && (rootPT.b = pt.s + $eef254727dd68eca$export$65f2564e9a9b9222(rootPT.b)); // (beginning value)
+    }
+}, $eef254727dd68eca$var$_addAliasesToVars = function _addAliasesToVars(targets, vars) {
+    var harness = targets[0] ? $eef254727dd68eca$export$8b9be379d2de2a39(targets[0]).harness : 0, propertyAliases = harness && harness.aliases, copy, p, i, aliases;
+    if (!propertyAliases) return vars;
+    copy = $eef254727dd68eca$var$_merge({}, vars);
+    for(p in propertyAliases)if (p in copy) {
+        aliases = propertyAliases[p].split(",");
+        i = aliases.length;
+        while(i--)copy[aliases[i]] = copy[p];
+    }
+    return copy;
+}, // parses multiple formats, like {"0%": {x: 100}, {"50%": {x: -20}} and { x: {"0%": 100, "50%": -20} }, and an "ease" can be set on any object. We populate an "allProps" object with an Array for each property, like {x: [{}, {}], y:[{}, {}]} with data for each property tween. The objects have a "t" (time), "v", (value), and "e" (ease) property. This allows us to piece together a timeline later.
+$eef254727dd68eca$var$_parseKeyframe = function _parseKeyframe(prop, obj, allProps, easeEach) {
+    var ease = obj.ease || easeEach || "power1.inOut", p, a;
+    if ($eef254727dd68eca$var$_isArray(obj)) {
+        a = allProps[prop] || (allProps[prop] = []); // t = time (out of 100), v = value, e = ease
+        obj.forEach(function(value, i) {
+            return a.push({
+                t: i / (obj.length - 1) * 100,
+                v: value,
+                e: ease
+            });
+        });
+    } else for(p in obj){
+        a = allProps[p] || (allProps[p] = []);
+        p === "ease" || a.push({
+            t: parseFloat(prop),
+            v: obj[p],
+            e: ease
+        });
+    }
+}, $eef254727dd68eca$var$_parseFuncOrString = function _parseFuncOrString(value, tween, i, target, targets) {
+    return $eef254727dd68eca$var$_isFunction(value) ? value.call(tween, i, target, targets) : $eef254727dd68eca$export$f664476fd67145ca(value) && ~value.indexOf("random(") ? $eef254727dd68eca$export$d5962a97e3cde94d(value) : value;
+}, $eef254727dd68eca$var$_staggerTweenProps = $eef254727dd68eca$var$_callbackNames + "repeat,repeatDelay,yoyo,repeatRefresh,yoyoEase,autoRevert", $eef254727dd68eca$var$_staggerPropsToSkip = {};
+$eef254727dd68eca$export$f9000b814859f126($eef254727dd68eca$var$_staggerTweenProps + ",id,stagger,delay,duration,paused,scrollTrigger", function(name) {
+    return $eef254727dd68eca$var$_staggerPropsToSkip[name] = 1;
+});
+var $eef254727dd68eca$export$208a41d6b4e37b97 = /*#__PURE__*/ function(_Animation2) {
+    $eef254727dd68eca$var$_inheritsLoose(Tween, _Animation2);
+    function Tween(targets, vars, position, skipInherit) {
+        var _this3;
+        if (typeof vars === "number") {
+            position.duration = vars;
+            vars = position;
+            position = null;
+        }
+        _this3 = _Animation2.call(this, skipInherit ? vars : $eef254727dd68eca$var$_inheritDefaults(vars)) || this;
+        var _this3$vars = _this3.vars, duration = _this3$vars.duration, delay = _this3$vars.delay, immediateRender = _this3$vars.immediateRender, stagger = _this3$vars.stagger, overwrite = _this3$vars.overwrite, keyframes = _this3$vars.keyframes, defaults = _this3$vars.defaults, scrollTrigger = _this3$vars.scrollTrigger, yoyoEase = _this3$vars.yoyoEase, parent = vars.parent || $eef254727dd68eca$var$_globalTimeline, parsedTargets = ($eef254727dd68eca$var$_isArray(targets) || $eef254727dd68eca$var$_isTypedArray(targets) ? $eef254727dd68eca$var$_isNumber(targets[0]) : "length" in vars) ? [
+            targets
+        ] : $eef254727dd68eca$export$45b10814cc054894(targets), tl, i, copy, l, p, curTarget, staggerFunc, staggerVarsToMerge;
+        _this3._targets = parsedTargets.length ? $eef254727dd68eca$var$_harness(parsedTargets) : $eef254727dd68eca$var$_warn("GSAP target " + targets + " not found. https://greensock.com", !$eef254727dd68eca$export$4922bee768729a77.nullTargetWarn) || [];
+        _this3._ptLookup = []; //PropTween lookup. An array containing an object for each target, having keys for each tweening property
+        _this3._overwrite = overwrite;
+        if (keyframes || stagger || $eef254727dd68eca$var$_isFuncOrString(duration) || $eef254727dd68eca$var$_isFuncOrString(delay)) {
+            vars = _this3.vars;
+            tl = _this3.timeline = new $eef254727dd68eca$export$e6a97ba2cae5bb94({
+                data: "nested",
+                defaults: defaults || {},
+                targets: parent && parent.data === "nested" ? parent.vars.targets : parsedTargets
+            }); // we need to store the targets because for staggers and keyframes, we end up creating an individual tween for each but function-based values need to know the index and the whole Array of targets.
+            tl.kill();
+            tl.parent = tl._dp = $eef254727dd68eca$var$_assertThisInitialized(_this3);
+            tl._start = 0;
+            if (stagger || $eef254727dd68eca$var$_isFuncOrString(duration) || $eef254727dd68eca$var$_isFuncOrString(delay)) {
+                l = parsedTargets.length;
+                staggerFunc = stagger && $eef254727dd68eca$export$f02a9ddbe4480f19(stagger);
+                if ($eef254727dd68eca$var$_isObject(stagger)) {
+                    //users can pass in callbacks like onStart/onComplete in the stagger object. These should fire with each individual tween.
+                    for(p in stagger)if (~$eef254727dd68eca$var$_staggerTweenProps.indexOf(p)) {
+                        staggerVarsToMerge || (staggerVarsToMerge = {});
+                        staggerVarsToMerge[p] = stagger[p];
+                    }
+                }
+                for(i = 0; i < l; i++){
+                    copy = $eef254727dd68eca$var$_copyExcluding(vars, $eef254727dd68eca$var$_staggerPropsToSkip);
+                    copy.stagger = 0;
+                    yoyoEase && (copy.yoyoEase = yoyoEase);
+                    staggerVarsToMerge && $eef254727dd68eca$var$_merge(copy, staggerVarsToMerge);
+                    curTarget = parsedTargets[i]; //don't just copy duration or delay because if they're a string or function, we'd end up in an infinite loop because _isFuncOrString() would evaluate as true in the child tweens, entering this loop, etc. So we parse the value straight from vars and default to 0.
+                    copy.duration = +$eef254727dd68eca$var$_parseFuncOrString(duration, $eef254727dd68eca$var$_assertThisInitialized(_this3), i, curTarget, parsedTargets);
+                    copy.delay = (+$eef254727dd68eca$var$_parseFuncOrString(delay, $eef254727dd68eca$var$_assertThisInitialized(_this3), i, curTarget, parsedTargets) || 0) - _this3._delay;
+                    if (!stagger && l === 1 && copy.delay) {
+                        // if someone does delay:"random(1, 5)", repeat:-1, for example, the delay shouldn't be inside the repeat.
+                        _this3._delay = delay = copy.delay;
+                        _this3._start += delay;
+                        copy.delay = 0;
+                    }
+                    tl.to(curTarget, copy, staggerFunc ? staggerFunc(i, curTarget, parsedTargets) : 0);
+                    tl._ease = $eef254727dd68eca$var$_easeMap.none;
+                }
+                tl.duration() ? duration = delay = 0 : _this3.timeline = 0; // if the timeline's duration is 0, we don't need a timeline internally!
+            } else if (keyframes) {
+                $eef254727dd68eca$var$_inheritDefaults($eef254727dd68eca$export$dc2b19673bb53610(tl.vars.defaults, {
+                    ease: "none"
+                }));
+                tl._ease = $eef254727dd68eca$var$_parseEase(keyframes.ease || vars.ease || "none");
+                var time = 0, a, kf, v;
+                if ($eef254727dd68eca$var$_isArray(keyframes)) {
+                    keyframes.forEach(function(frame) {
+                        return tl.to(parsedTargets, frame, ">");
+                    });
+                    tl.duration(); // to ensure tl._dur is cached because we tap into it for performance purposes in the render() method.
+                } else {
+                    copy = {};
+                    for(p in keyframes)p === "ease" || p === "easeEach" || $eef254727dd68eca$var$_parseKeyframe(p, keyframes[p], copy, keyframes.easeEach);
+                    for(p in copy){
+                        a = copy[p].sort(function(a, b) {
+                            return a.t - b.t;
+                        });
+                        time = 0;
+                        for(i = 0; i < a.length; i++){
+                            kf = a[i];
+                            v = {
+                                ease: kf.e,
+                                duration: (kf.t - (i ? a[i - 1].t : 0)) / 100 * duration
+                            };
+                            v[p] = kf.v;
+                            tl.to(parsedTargets, v, time);
+                            time += v.duration;
+                        }
+                    }
+                    tl.duration() < duration && tl.to({}, {
+                        duration: duration - tl.duration()
+                    }); // in case keyframes didn't go to 100%
+                }
+            }
+            duration || _this3.duration(duration = tl.duration());
+        } else _this3.timeline = 0; //speed optimization, faster lookups (no going up the prototype chain)
+        if (overwrite === true && !$eef254727dd68eca$var$_suppressOverwrites) {
+            $eef254727dd68eca$var$_overwritingTween = $eef254727dd68eca$var$_assertThisInitialized(_this3);
+            $eef254727dd68eca$var$_globalTimeline.killTweensOf(parsedTargets);
+            $eef254727dd68eca$var$_overwritingTween = 0;
+        }
+        $eef254727dd68eca$var$_addToTimeline(parent, $eef254727dd68eca$var$_assertThisInitialized(_this3), position);
+        vars.reversed && _this3.reverse();
+        vars.paused && _this3.paused(true);
+        if (immediateRender || !duration && !keyframes && _this3._start === $eef254727dd68eca$var$_roundPrecise(parent._time) && $eef254727dd68eca$var$_isNotFalse(immediateRender) && $eef254727dd68eca$var$_hasNoPausedAncestors($eef254727dd68eca$var$_assertThisInitialized(_this3)) && parent.data !== "nested") {
+            _this3._tTime = -$eef254727dd68eca$var$_tinyNum; //forces a render without having to set the render() "force" parameter to true because we want to allow lazying by default (using the "force" parameter always forces an immediate full render)
+            _this3.render(Math.max(0, -delay) || 0); //in case delay is negative
+        }
+        scrollTrigger && $eef254727dd68eca$var$_scrollTrigger($eef254727dd68eca$var$_assertThisInitialized(_this3), scrollTrigger);
+        return _this3;
+    }
+    var _proto3 = Tween.prototype;
+    _proto3.render = function render(totalTime, suppressEvents, force) {
+        var prevTime = this._time, tDur = this._tDur, dur = this._dur, isNegative = totalTime < 0, tTime = totalTime > tDur - $eef254727dd68eca$var$_tinyNum && !isNegative ? tDur : totalTime < $eef254727dd68eca$var$_tinyNum ? 0 : totalTime, time, pt, iteration, cycleDuration, prevIteration, isYoyo, ratio, timeline, yoyoEase;
+        if (!dur) $eef254727dd68eca$var$_renderZeroDurationTween(this, totalTime, suppressEvents, force);
+        else if (tTime !== this._tTime || !totalTime || force || !this._initted && this._tTime || this._startAt && this._zTime < 0 !== isNegative) {
+            //this senses if we're crossing over the start time, in which case we must record _zTime and force the render, but we do it in this lengthy conditional way for performance reasons (usually we can skip the calculations): this._initted && (this._zTime < 0) !== (totalTime < 0)
+            time = tTime;
+            timeline = this.timeline;
+            if (this._repeat) {
+                //adjust the time for repeats and yoyos
+                cycleDuration = dur + this._rDelay;
+                if (this._repeat < -1 && isNegative) return this.totalTime(cycleDuration * 100 + totalTime, suppressEvents, force);
+                time = $eef254727dd68eca$var$_roundPrecise(tTime % cycleDuration); //round to avoid floating point errors. (4 % 0.8 should be 0 but some browsers report it as 0.79999999!)
+                if (tTime === tDur) {
+                    // the tDur === tTime is for edge cases where there's a lengthy decimal on the duration and it may reach the very end but the time is rendered as not-quite-there (remember, tDur is rounded to 4 decimals whereas dur isn't)
+                    iteration = this._repeat;
+                    time = dur;
+                } else {
+                    iteration = ~~(tTime / cycleDuration);
+                    if (iteration && iteration === tTime / cycleDuration) {
+                        time = dur;
+                        iteration--;
+                    }
+                    time > dur && (time = dur);
+                }
+                isYoyo = this._yoyo && iteration & 1;
+                if (isYoyo) {
+                    yoyoEase = this._yEase;
+                    time = dur - time;
+                }
+                prevIteration = $eef254727dd68eca$var$_animationCycle(this._tTime, cycleDuration);
+                if (time === prevTime && !force && this._initted) {
+                    //could be during the repeatDelay part. No need to render and fire callbacks.
+                    this._tTime = tTime;
+                    return this;
+                }
+                if (iteration !== prevIteration) {
+                    timeline && this._yEase && $eef254727dd68eca$var$_propagateYoyoEase(timeline, isYoyo); //repeatRefresh functionality
+                    if (this.vars.repeatRefresh && !isYoyo && !this._lock) {
+                        this._lock = force = 1; //force, otherwise if lazy is true, the _attemptInitTween() will return and we'll jump out and get caught bouncing on each tick.
+                        this.render($eef254727dd68eca$var$_roundPrecise(cycleDuration * iteration), true).invalidate()._lock = 0;
+                    }
+                }
+            }
+            if (!this._initted) {
+                if ($eef254727dd68eca$var$_attemptInitTween(this, isNegative ? totalTime : time, force, suppressEvents, tTime)) {
+                    this._tTime = 0; // in constructor if immediateRender is true, we set _tTime to -_tinyNum to have the playhead cross the starting point but we can't leave _tTime as a negative number.
+                    return this;
+                }
+                if (prevTime !== this._time) // rare edge case - during initialization, an onUpdate in the _startAt (.fromTo()) might force this tween to render at a different spot in which case we should ditch this render() call so that it doesn't revert the values.
+                return this;
+                if (dur !== this._dur) // while initting, a plugin like InertiaPlugin might alter the duration, so rerun from the start to ensure everything renders as it should.
+                return this.render(totalTime, suppressEvents, force);
+            }
+            this._tTime = tTime;
+            this._time = time;
+            if (!this._act && this._ts) {
+                this._act = 1; //as long as it's not paused, force it to be active so that if the user renders independent of the parent timeline, it'll be forced to re-render on the next tick.
+                this._lazy = 0;
+            }
+            this.ratio = ratio = (yoyoEase || this._ease)(time / dur);
+            if (this._from) this.ratio = ratio = 1 - ratio;
+            if (time && !prevTime && !suppressEvents) {
+                $eef254727dd68eca$var$_callback(this, "onStart");
+                if (this._tTime !== tTime) // in case the onStart triggered a render at a different spot, eject. Like if someone did animation.pause(0.5) or something inside the onStart.
+                return this;
+            }
+            pt = this._pt;
+            while(pt){
+                pt.r(ratio, pt.d);
+                pt = pt._next;
+            }
+            timeline && timeline.render(totalTime < 0 ? totalTime : !time && isYoyo ? -$eef254727dd68eca$var$_tinyNum : timeline._dur * timeline._ease(time / this._dur), suppressEvents, force) || this._startAt && (this._zTime = totalTime);
+            if (this._onUpdate && !suppressEvents) {
+                isNegative && $eef254727dd68eca$var$_rewindStartAt(this, totalTime, suppressEvents, force); //note: for performance reasons, we tuck this conditional logic inside less traveled areas (most tweens don't have an onUpdate). We'd just have it at the end before the onComplete, but the values should be updated before any onUpdate is called, so we ALSO put it here and then if it's not called, we do so later near the onComplete.
+                $eef254727dd68eca$var$_callback(this, "onUpdate");
+            }
+            this._repeat && iteration !== prevIteration && this.vars.onRepeat && !suppressEvents && this.parent && $eef254727dd68eca$var$_callback(this, "onRepeat");
+            if ((tTime === this._tDur || !tTime) && this._tTime === tTime) {
+                isNegative && !this._onUpdate && $eef254727dd68eca$var$_rewindStartAt(this, totalTime, true, true);
+                (totalTime || !dur) && (tTime === this._tDur && this._ts > 0 || !tTime && this._ts < 0) && $eef254727dd68eca$var$_removeFromParent(this, 1); // don't remove if we're rendering at exactly a time of 0, as there could be autoRevert values that should get set on the next tick (if the playhead goes backward beyond the startTime, negative totalTime). Don't remove if the timeline is reversed and the playhead isn't at 0, otherwise tl.progress(1).reverse() won't work. Only remove if the playhead is at the end and timeScale is positive, or if the playhead is at 0 and the timeScale is negative.
+                if (!suppressEvents && !(isNegative && !prevTime) && (tTime || prevTime || isYoyo)) {
+                    // if prevTime and tTime are zero, we shouldn't fire the onReverseComplete. This could happen if you gsap.to(... {paused:true}).play();
+                    $eef254727dd68eca$var$_callback(this, tTime === tDur ? "onComplete" : "onReverseComplete", true);
+                    this._prom && !(tTime < tDur && this.timeScale() > 0) && this._prom();
+                }
+            }
+        }
+        return this;
+    };
+    _proto3.targets = function targets() {
+        return this._targets;
+    };
+    _proto3.invalidate = function invalidate(soft) {
+        // "soft" gives us a way to clear out everything EXCEPT the recorded pre-"from" portion of from() tweens. Otherwise, for example, if you tween.progress(1).render(0, true true).invalidate(), the "from" values would persist and then on the next render, the from() tweens would initialize and the current value would match the "from" values, thus animate from the same value to the same value (no animation). We tap into this in ScrollTrigger's refresh() where we must push a tween to completion and then back again but honor its init state in case the tween is dependent on another tween further up on the page.
+        (!soft || !this.vars.runBackwards) && (this._startAt = 0);
+        this._pt = this._op = this._onUpdate = this._lazy = this.ratio = 0;
+        this._ptLookup = [];
+        this.timeline && this.timeline.invalidate(soft);
+        return _Animation2.prototype.invalidate.call(this, soft);
+    };
+    _proto3.resetTo = function resetTo(property, value, start, startIsRelative) {
+        $eef254727dd68eca$var$_tickerActive || $eef254727dd68eca$export$762ed8fbedb691e3.wake();
+        this._ts || this.play();
+        var time = Math.min(this._dur, (this._dp._time - this._start) * this._ts), ratio;
+        this._initted || $eef254727dd68eca$var$_initTween(this, time);
+        ratio = this._ease(time / this._dur); // don't just get tween.ratio because it may not have rendered yet.
+        // possible future addition to allow an object with multiple values to update, like tween.resetTo({x: 100, y: 200}); At this point, it doesn't seem worth the added kb given the fact that most users will likely opt for the convenient gsap.quickTo() way of interacting with this method.
+        // if (_isObject(property)) { // performance optimization
+        // 	for (p in property) {
+        // 		if (_updatePropTweens(this, p, property[p], value ? value[p] : null, start, ratio, time)) {
+        // 			return this.resetTo(property, value, start, startIsRelative); // if a PropTween wasn't found for the property, it'll get forced with a re-initialization so we need to jump out and start over again.
+        // 		}
+        // 	}
+        // } else {
+        if ($eef254727dd68eca$var$_updatePropTweens(this, property, value, start, startIsRelative, ratio, time)) return this.resetTo(property, value, start, startIsRelative); // if a PropTween wasn't found for the property, it'll get forced with a re-initialization so we need to jump out and start over again.
+         //}
+        $eef254727dd68eca$var$_alignPlayhead(this, 0);
+        this.parent || $eef254727dd68eca$var$_addLinkedListItem(this._dp, this, "_first", "_last", this._dp._sort ? "_start" : 0);
+        return this.render(0);
+    };
+    _proto3.kill = function kill(targets, vars) {
+        if (vars === void 0) vars = "all";
+        if (!targets && (!vars || vars === "all")) {
+            this._lazy = this._pt = 0;
+            return this.parent ? $eef254727dd68eca$var$_interrupt(this) : this;
+        }
+        if (this.timeline) {
+            var tDur = this.timeline.totalDuration();
+            this.timeline.killTweensOf(targets, vars, $eef254727dd68eca$var$_overwritingTween && $eef254727dd68eca$var$_overwritingTween.vars.overwrite !== true)._first || $eef254727dd68eca$var$_interrupt(this); // if nothing is left tweening, interrupt.
+            this.parent && tDur !== this.timeline.totalDuration() && $eef254727dd68eca$var$_setDuration(this, this._dur * this.timeline._tDur / tDur, 0, 1); // if a nested tween is killed that changes the duration, it should affect this tween's duration. We must use the ratio, though, because sometimes the internal timeline is stretched like for keyframes where they don't all add up to whatever the parent tween's duration was set to.
+            return this;
+        }
+        var parsedTargets = this._targets, killingTargets = targets ? $eef254727dd68eca$export$45b10814cc054894(targets) : parsedTargets, propTweenLookup = this._ptLookup, firstPT = this._pt, overwrittenProps, curLookup, curOverwriteProps, props, p, pt, i;
+        if ((!vars || vars === "all") && $eef254727dd68eca$var$_arraysMatch(parsedTargets, killingTargets)) {
+            vars === "all" && (this._pt = 0);
+            return $eef254727dd68eca$var$_interrupt(this);
+        }
+        overwrittenProps = this._op = this._op || [];
+        if (vars !== "all") {
+            //so people can pass in a comma-delimited list of property names
+            if ($eef254727dd68eca$export$f664476fd67145ca(vars)) {
+                p = {};
+                $eef254727dd68eca$export$f9000b814859f126(vars, function(name) {
+                    return p[name] = 1;
+                });
+                vars = p;
+            }
+            vars = $eef254727dd68eca$var$_addAliasesToVars(parsedTargets, vars);
+        }
+        i = parsedTargets.length;
+        while(i--)if (~killingTargets.indexOf(parsedTargets[i])) {
+            curLookup = propTweenLookup[i];
+            if (vars === "all") {
+                overwrittenProps[i] = vars;
+                props = curLookup;
+                curOverwriteProps = {};
+            } else {
+                curOverwriteProps = overwrittenProps[i] = overwrittenProps[i] || {};
+                props = vars;
+            }
+            for(p in props){
+                pt = curLookup && curLookup[p];
+                if (pt) {
+                    if (!("kill" in pt.d) || pt.d.kill(p) === true) $eef254727dd68eca$export$cd008aa6cd8844e3(this, pt, "_pt");
+                    delete curLookup[p];
+                }
+                if (curOverwriteProps !== "all") curOverwriteProps[p] = 1;
+            }
+        }
+        this._initted && !this._pt && firstPT && $eef254727dd68eca$var$_interrupt(this); //if all tweening properties are killed, kill the tween. Without this line, if there's a tween with multiple targets and then you killTweensOf() each target individually, the tween would technically still remain active and fire its onComplete even though there aren't any more properties tweening.
+        return this;
+    };
+    Tween.to = function to(targets, vars) {
+        return new Tween(targets, vars, arguments[2]);
+    };
+    Tween.from = function from(targets, vars) {
+        return $eef254727dd68eca$var$_createTweenType(1, arguments);
+    };
+    Tween.delayedCall = function delayedCall(delay, callback, params, scope) {
+        return new Tween(callback, 0, {
+            immediateRender: false,
+            lazy: false,
+            overwrite: false,
+            delay: delay,
+            onComplete: callback,
+            onReverseComplete: callback,
+            onCompleteParams: params,
+            onReverseCompleteParams: params,
+            callbackScope: scope
+        }); // we must use onReverseComplete too for things like timeline.add(() => {...}) which should be triggered in BOTH directions (forward and reverse)
+    };
+    Tween.fromTo = function fromTo(targets, fromVars, toVars) {
+        return $eef254727dd68eca$var$_createTweenType(2, arguments);
+    };
+    Tween.set = function set(targets, vars) {
+        vars.duration = 0;
+        vars.repeatDelay || (vars.repeat = 0);
+        return new Tween(targets, vars);
+    };
+    Tween.killTweensOf = function killTweensOf(targets, props, onlyActive) {
+        return $eef254727dd68eca$var$_globalTimeline.killTweensOf(targets, props, onlyActive);
+    };
+    return Tween;
+}($eef254727dd68eca$export$c35d437ae5945fcd);
+$eef254727dd68eca$export$dc2b19673bb53610($eef254727dd68eca$export$208a41d6b4e37b97.prototype, {
+    _targets: [],
+    _lazy: 0,
+    _startAt: 0,
+    _op: 0,
+    _onInit: 0
+}); //add the pertinent timeline methods to Tween instances so that users can chain conveniently and create a timeline automatically. (removed due to concerns that it'd ultimately add to more confusion especially for beginners)
+// _forEachName("to,from,fromTo,set,call,add,addLabel,addPause", name => {
+// 	Tween.prototype[name] = function() {
+// 		let tl = new Timeline();
+// 		return _addToTimeline(tl, this)[name].apply(tl, toArray(arguments));
+// 	}
+// });
+//for backward compatibility. Leverage the timeline calls.
+$eef254727dd68eca$export$f9000b814859f126("staggerTo,staggerFrom,staggerFromTo", function(name) {
+    $eef254727dd68eca$export$208a41d6b4e37b97[name] = function() {
+        var tl = new $eef254727dd68eca$export$e6a97ba2cae5bb94(), params = $eef254727dd68eca$var$_slice.call(arguments, 0);
+        params.splice(name === "staggerFromTo" ? 5 : 4, 0, 0);
+        return tl[name].apply(tl, params);
+    };
+});
+/*
+ * --------------------------------------------------------------------------------------
+ * PROPTWEEN
+ * --------------------------------------------------------------------------------------
+ */ var $eef254727dd68eca$var$_setterPlain = function _setterPlain(target, property, value) {
+    return target[property] = value;
+}, $eef254727dd68eca$var$_setterFunc = function _setterFunc(target, property, value) {
+    return target[property](value);
+}, $eef254727dd68eca$var$_setterFuncWithParam = function _setterFuncWithParam(target, property, value, data) {
+    return target[property](data.fp, value);
+}, $eef254727dd68eca$var$_setterAttribute = function _setterAttribute(target, property, value) {
+    return target.setAttribute(property, value);
+}, $eef254727dd68eca$export$d60fbc1e0278aaf0 = function _getSetter(target, property) {
+    return $eef254727dd68eca$var$_isFunction(target[property]) ? $eef254727dd68eca$var$_setterFunc : $eef254727dd68eca$export$a8178c063a9fd3a1(target[property]) && target.setAttribute ? $eef254727dd68eca$var$_setterAttribute : $eef254727dd68eca$var$_setterPlain;
+}, $eef254727dd68eca$var$_renderPlain = function _renderPlain(ratio, data) {
+    return data.set(data.t, data.p, Math.round((data.s + data.c * ratio) * 1000000) / 1000000, data);
+}, $eef254727dd68eca$var$_renderBoolean = function _renderBoolean(ratio, data) {
+    return data.set(data.t, data.p, !!(data.s + data.c * ratio), data);
+}, $eef254727dd68eca$export$c5bc8e04394ecb2 = function _renderComplexString(ratio, data) {
+    var pt = data._pt, s = "";
+    if (!ratio && data.b) //b = beginning string
+    s = data.b;
+    else if (ratio === 1 && data.e) //e = ending string
+    s = data.e;
+    else {
+        while(pt){
+            s = pt.p + (pt.m ? pt.m(pt.s + pt.c * ratio) : Math.round((pt.s + pt.c * ratio) * 10000) / 10000) + s; //we use the "p" property for the text inbetween (like a suffix). And in the context of a complex string, the modifier (m) is typically just Math.round(), like for RGB colors.
+            pt = pt._next;
+        }
+        s += data.c; //we use the "c" of the PropTween to store the final chunk of non-numeric text.
+    }
+    data.set(data.t, data.p, s, data);
+}, $eef254727dd68eca$var$_renderPropTweens = function _renderPropTweens(ratio, data) {
+    var pt = data._pt;
+    while(pt){
+        pt.r(ratio, pt.d);
+        pt = pt._next;
+    }
+}, $eef254727dd68eca$var$_addPluginModifier = function _addPluginModifier(modifier, tween, target, property) {
+    var pt = this._pt, next;
+    while(pt){
+        next = pt._next;
+        pt.p === property && pt.modifier(modifier, tween, target);
+        pt = next;
+    }
+}, $eef254727dd68eca$var$_killPropTweensOf = function _killPropTweensOf(property) {
+    var pt = this._pt, hasNonDependentRemaining, next;
+    while(pt){
+        next = pt._next;
+        if (pt.p === property && !pt.op || pt.op === property) $eef254727dd68eca$export$cd008aa6cd8844e3(this, pt, "_pt");
+        else if (!pt.dep) hasNonDependentRemaining = 1;
+        pt = next;
+    }
+    return !hasNonDependentRemaining;
+}, $eef254727dd68eca$var$_setterWithModifier = function _setterWithModifier(target, property, value, data) {
+    data.mSet(target, property, data.m.call(data.tween, value, data.mt), data);
+}, $eef254727dd68eca$export$eed5824f53346d57 = function _sortPropTweensByPriority(parent) {
+    var pt = parent._pt, next, pt2, first, last; //sorts the PropTween linked list in order of priority because some plugins need to do their work after ALL of the PropTweens were created (like RoundPropsPlugin and ModifiersPlugin)
+    while(pt){
+        next = pt._next;
+        pt2 = first;
+        while(pt2 && pt2.pr > pt.pr)pt2 = pt2._next;
+        if (pt._prev = pt2 ? pt2._prev : last) pt._prev._next = pt;
+        else first = pt;
+        if (pt._next = pt2) pt2._prev = pt;
+        else last = pt;
+        pt = next;
+    }
+    parent._pt = first;
+}; //PropTween key: t = target, p = prop, r = renderer, d = data, s = start, c = change, op = overwriteProperty (ONLY populated when it's different than p), pr = priority, _next/_prev for the linked list siblings, set = setter, m = modifier, mSet = modifierSetter (the original setter, before a modifier was added)
+var $eef254727dd68eca$export$3a67f7f44b1e838a = /*#__PURE__*/ function() {
+    function PropTween(next, target, prop, start, change, renderer, data, setter, priority) {
+        this.t = target;
+        this.s = start;
+        this.c = change;
+        this.p = prop;
+        this.r = renderer || $eef254727dd68eca$var$_renderPlain;
+        this.d = data || this;
+        this.set = setter || $eef254727dd68eca$var$_setterPlain;
+        this.pr = priority || 0;
+        this._next = next;
+        if (next) next._prev = this;
+    }
+    var _proto4 = PropTween.prototype;
+    _proto4.modifier = function modifier(func, tween, target) {
+        this.mSet = this.mSet || this.set; //in case it was already set (a PropTween can only have one modifier)
+        this.set = $eef254727dd68eca$var$_setterWithModifier;
+        this.m = func;
+        this.mt = target; //modifier target
+        this.tween = tween;
+    };
+    return PropTween;
+}(); //Initialization tasks
+$eef254727dd68eca$export$f9000b814859f126($eef254727dd68eca$var$_callbackNames + "parent,duration,ease,delay,overwrite,runBackwards,startAt,yoyo,immediateRender,repeat,repeatDelay,data,paused,reversed,lazy,callbackScope,stringFilter,id,yoyoEase,stagger,inherit,repeatRefresh,keyframes,autoRevert,scrollTrigger", function(name) {
+    return $eef254727dd68eca$var$_reservedProps[name] = 1;
+});
+$eef254727dd68eca$var$_globals.TweenMax = $eef254727dd68eca$var$_globals.TweenLite = $eef254727dd68eca$export$208a41d6b4e37b97;
+$eef254727dd68eca$var$_globals.TimelineLite = $eef254727dd68eca$var$_globals.TimelineMax = $eef254727dd68eca$export$e6a97ba2cae5bb94;
+$eef254727dd68eca$var$_globalTimeline = new $eef254727dd68eca$export$e6a97ba2cae5bb94({
+    sortChildren: false,
+    defaults: $eef254727dd68eca$var$_defaults,
+    autoRemoveChildren: true,
+    id: "root",
+    smoothChildTiming: true
+});
+$eef254727dd68eca$export$4922bee768729a77.stringFilter = $eef254727dd68eca$export$7eb2e5eb5eeb96a4;
+var $eef254727dd68eca$var$_media = [], $eef254727dd68eca$var$_listeners = {}, $eef254727dd68eca$var$_emptyArray = [], $eef254727dd68eca$var$_lastMediaTime = 0, $eef254727dd68eca$var$_dispatch = function _dispatch(type) {
+    return ($eef254727dd68eca$var$_listeners[type] || $eef254727dd68eca$var$_emptyArray).map(function(f) {
+        return f();
+    });
+}, $eef254727dd68eca$var$_onMediaChange = function _onMediaChange() {
+    var time = Date.now(), matches = [];
+    if (time - $eef254727dd68eca$var$_lastMediaTime > 2) {
+        $eef254727dd68eca$var$_dispatch("matchMediaInit");
+        $eef254727dd68eca$var$_media.forEach(function(c) {
+            var queries = c.queries, conditions = c.conditions, match, p, anyMatch, toggled;
+            for(p in queries){
+                match = $eef254727dd68eca$var$_win.matchMedia(queries[p]).matches; // Firefox doesn't update the "matches" property of the MediaQueryList object correctly - it only does so as it calls its change handler - so we must re-create a media query here to ensure it's accurate.
+                match && (anyMatch = 1);
+                if (match !== conditions[p]) {
+                    conditions[p] = match;
+                    toggled = 1;
+                }
+            }
+            if (toggled) {
+                c.revert();
+                anyMatch && matches.push(c);
+            }
+        });
+        $eef254727dd68eca$var$_dispatch("matchMediaRevert");
+        matches.forEach(function(c) {
+            return c.onMatch(c);
+        });
+        $eef254727dd68eca$var$_lastMediaTime = time;
+        $eef254727dd68eca$var$_dispatch("matchMedia");
+    }
+};
+var $eef254727dd68eca$var$Context = /*#__PURE__*/ function() {
+    function Context(func, scope) {
+        this.selector = scope && $eef254727dd68eca$export$aea217a45095ce11(scope);
+        this.data = [];
+        this._r = []; // returned/cleanup functions
+        this.isReverted = false;
+        func && this.add(func);
+    }
+    var _proto5 = Context.prototype;
+    _proto5.add = function add(name, func, scope) {
+        if ($eef254727dd68eca$var$_isFunction(name)) {
+            scope = func;
+            func = name;
+            name = $eef254727dd68eca$var$_isFunction;
+        }
+        var self = this, f = function f() {
+            var prev = $eef254727dd68eca$var$_context, prevSelector = self.selector, result;
+            prev && prev !== self && prev.data.push(self);
+            scope && (self.selector = $eef254727dd68eca$export$aea217a45095ce11(scope));
+            $eef254727dd68eca$var$_context = self;
+            result = func.apply(self, arguments);
+            $eef254727dd68eca$var$_isFunction(result) && self._r.push(result);
+            $eef254727dd68eca$var$_context = prev;
+            self.selector = prevSelector;
+            self.isReverted = false;
+            return result;
+        };
+        self.last = f;
+        return name === $eef254727dd68eca$var$_isFunction ? f(self) : name ? self[name] = f : f;
+    };
+    _proto5.ignore = function ignore(func) {
+        var prev = $eef254727dd68eca$var$_context;
+        $eef254727dd68eca$var$_context = null;
+        func(this);
+        $eef254727dd68eca$var$_context = prev;
+    };
+    _proto5.getTweens = function getTweens() {
+        var a = [];
+        this.data.forEach(function(e) {
+            return e instanceof Context ? a.push.apply(a, e.getTweens()) : e instanceof $eef254727dd68eca$export$208a41d6b4e37b97 && !(e.parent && e.parent.data === "nested") && a.push(e);
+        });
+        return a;
+    };
+    _proto5.clear = function clear() {
+        this._r.length = this.data.length = 0;
+    };
+    _proto5.kill = function kill(revert, matchMedia) {
+        var _this4 = this;
+        if (revert) {
+            var tweens = this.getTweens();
+            this.data.forEach(function(t) {
+                // Flip plugin tweens are very different in that they should actually be pushed to their end. The plugin replaces the timeline's .revert() method to do exactly that. But we also need to remove any of those nested tweens inside the flip timeline so that they don't get individually reverted.
+                if (t.data === "isFlip") {
+                    t.revert();
+                    t.getChildren(true, true, false).forEach(function(tween) {
+                        return tweens.splice(tweens.indexOf(tween), 1);
+                    });
+                }
+            }); // save as an object so that we can cache the globalTime for each tween to optimize performance during the sort
+            tweens.map(function(t) {
+                return {
+                    g: t.globalTime(0),
+                    t: t
+                };
+            }).sort(function(a, b) {
+                return b.g - a.g || -1;
+            }).forEach(function(o) {
+                return o.t.revert(revert);
+            }); // note: all of the _startAt tweens should be reverted in reverse order that thy were created, and they'll all have the same globalTime (-1) so the " || -1" in the sort keeps the order properly.
+            this.data.forEach(function(e) {
+                return !(e instanceof $eef254727dd68eca$export$c35d437ae5945fcd) && e.revert && e.revert(revert);
+            });
+            this._r.forEach(function(f) {
+                return f(revert, _this4);
+            });
+            this.isReverted = true;
+        } else this.data.forEach(function(e) {
+            return e.kill && e.kill();
+        });
+        this.clear();
+        if (matchMedia) {
+            var i = $eef254727dd68eca$var$_media.indexOf(this);
+            !!~i && $eef254727dd68eca$var$_media.splice(i, 1);
+        }
+    };
+    _proto5.revert = function revert(config) {
+        this.kill(config || {});
+    };
+    return Context;
+}();
+var $eef254727dd68eca$var$MatchMedia = /*#__PURE__*/ function() {
+    function MatchMedia(scope) {
+        this.contexts = [];
+        this.scope = scope;
+    }
+    var _proto6 = MatchMedia.prototype;
+    _proto6.add = function add(conditions, func, scope) {
+        $eef254727dd68eca$var$_isObject(conditions) || (conditions = {
+            matches: conditions
+        });
+        var context = new $eef254727dd68eca$var$Context(0, scope || this.scope), cond = context.conditions = {}, mq, p, active;
+        this.contexts.push(context);
+        func = context.add("onMatch", func);
+        context.queries = conditions;
+        for(p in conditions)if (p === "all") active = 1;
+        else {
+            mq = $eef254727dd68eca$var$_win.matchMedia(conditions[p]);
+            if (mq) {
+                $eef254727dd68eca$var$_media.indexOf(context) < 0 && $eef254727dd68eca$var$_media.push(context);
+                (cond[p] = mq.matches) && (active = 1);
+                mq.addListener ? mq.addListener($eef254727dd68eca$var$_onMediaChange) : mq.addEventListener("change", $eef254727dd68eca$var$_onMediaChange);
+            }
+        }
+        active && func(context);
+        return this;
+    } // refresh() {
+    ;
+    _proto6.revert = function revert(config) {
+        this.kill(config || {});
+    };
+    _proto6.kill = function kill(revert) {
+        this.contexts.forEach(function(c) {
+            return c.kill(revert, true);
+        });
+    };
+    return MatchMedia;
+}();
+/*
+ * --------------------------------------------------------------------------------------
+ * GSAP
+ * --------------------------------------------------------------------------------------
+ */ var $eef254727dd68eca$var$_gsap = {
+    registerPlugin: function registerPlugin() {
+        for(var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++)args[_key2] = arguments[_key2];
+        args.forEach(function(config) {
+            return $eef254727dd68eca$var$_createPlugin(config);
+        });
+    },
+    timeline: function timeline(vars) {
+        return new $eef254727dd68eca$export$e6a97ba2cae5bb94(vars);
+    },
+    getTweensOf: function getTweensOf(targets, onlyActive) {
+        return $eef254727dd68eca$var$_globalTimeline.getTweensOf(targets, onlyActive);
+    },
+    getProperty: function getProperty(target, property, unit, uncache) {
+        $eef254727dd68eca$export$f664476fd67145ca(target) && (target = $eef254727dd68eca$export$45b10814cc054894(target)[0]); //in case selector text or an array is passed in
+        var getter = $eef254727dd68eca$export$8b9be379d2de2a39(target || {}).get, format = unit ? $eef254727dd68eca$var$_passThrough : $eef254727dd68eca$var$_numericIfPossible;
+        unit === "native" && (unit = "");
+        return !target ? target : !property ? function(property, unit, uncache) {
+            return format(($eef254727dd68eca$export$d305d8ec5d7c26b8[property] && $eef254727dd68eca$export$d305d8ec5d7c26b8[property].get || getter)(target, property, unit, uncache));
+        } : format(($eef254727dd68eca$export$d305d8ec5d7c26b8[property] && $eef254727dd68eca$export$d305d8ec5d7c26b8[property].get || getter)(target, property, unit, uncache));
+    },
+    quickSetter: function quickSetter(target, property, unit) {
+        target = $eef254727dd68eca$export$45b10814cc054894(target);
+        if (target.length > 1) {
+            var setters = target.map(function(t) {
+                return $eef254727dd68eca$export$99ee26438460406a.quickSetter(t, property, unit);
+            }), l = setters.length;
+            return function(value) {
+                var i = l;
+                while(i--)setters[i](value);
+            };
+        }
+        target = target[0] || {};
+        var Plugin = $eef254727dd68eca$export$d305d8ec5d7c26b8[property], cache = $eef254727dd68eca$export$8b9be379d2de2a39(target), p = cache.harness && (cache.harness.aliases || {})[property] || property, // in case it's an alias, like "rotate" for "rotation".
+        setter = Plugin ? function(value) {
+            var p = new Plugin();
+            $eef254727dd68eca$var$_quickTween._pt = 0;
+            p.init(target, unit ? value + unit : value, $eef254727dd68eca$var$_quickTween, 0, [
+                target
+            ]);
+            p.render(1, p);
+            $eef254727dd68eca$var$_quickTween._pt && $eef254727dd68eca$var$_renderPropTweens(1, $eef254727dd68eca$var$_quickTween);
+        } : cache.set(target, p);
+        return Plugin ? setter : function(value) {
+            return setter(target, p, unit ? value + unit : value, cache, 1);
+        };
+    },
+    quickTo: function quickTo(target, property, vars) {
+        var _merge2;
+        var tween = $eef254727dd68eca$export$99ee26438460406a.to(target, $eef254727dd68eca$var$_merge((_merge2 = {}, _merge2[property] = "+=0.1", _merge2.paused = true, _merge2), vars || {})), func = function func(value, start, startIsRelative) {
+            return tween.resetTo(property, value, start, startIsRelative);
+        };
+        func.tween = tween;
+        return func;
+    },
+    isTweening: function isTweening(targets) {
+        return $eef254727dd68eca$var$_globalTimeline.getTweensOf(targets, true).length > 0;
+    },
+    defaults: function defaults(value) {
+        value && value.ease && (value.ease = $eef254727dd68eca$var$_parseEase(value.ease, $eef254727dd68eca$var$_defaults.ease));
+        return $eef254727dd68eca$var$_mergeDeep($eef254727dd68eca$var$_defaults, value || {});
+    },
+    config: function config(value) {
+        return $eef254727dd68eca$var$_mergeDeep($eef254727dd68eca$export$4922bee768729a77, value || {});
+    },
+    registerEffect: function registerEffect(_ref3) {
+        var name = _ref3.name, effect = _ref3.effect, plugins = _ref3.plugins, defaults = _ref3.defaults, extendTimeline = _ref3.extendTimeline;
+        (plugins || "").split(",").forEach(function(pluginName) {
+            return pluginName && !$eef254727dd68eca$export$d305d8ec5d7c26b8[pluginName] && !$eef254727dd68eca$var$_globals[pluginName] && $eef254727dd68eca$var$_warn(name + " effect requires " + pluginName + " plugin.");
+        });
+        $eef254727dd68eca$var$_effects[name] = function(targets, vars, tl) {
+            return effect($eef254727dd68eca$export$45b10814cc054894(targets), $eef254727dd68eca$export$dc2b19673bb53610(vars || {}, defaults), tl);
+        };
+        if (extendTimeline) $eef254727dd68eca$export$e6a97ba2cae5bb94.prototype[name] = function(targets, vars, position) {
+            return this.add($eef254727dd68eca$var$_effects[name](targets, $eef254727dd68eca$var$_isObject(vars) ? vars : (position = vars) && {}, this), position);
+        };
+    },
+    registerEase: function registerEase(name, ease) {
+        $eef254727dd68eca$var$_easeMap[name] = $eef254727dd68eca$var$_parseEase(ease);
+    },
+    parseEase: function parseEase(ease, defaultEase) {
+        return arguments.length ? $eef254727dd68eca$var$_parseEase(ease, defaultEase) : $eef254727dd68eca$var$_easeMap;
+    },
+    getById: function getById(id) {
+        return $eef254727dd68eca$var$_globalTimeline.getById(id);
+    },
+    exportRoot: function exportRoot(vars, includeDelayedCalls) {
+        if (vars === void 0) vars = {};
+        var tl = new $eef254727dd68eca$export$e6a97ba2cae5bb94(vars), child, next;
+        tl.smoothChildTiming = $eef254727dd68eca$var$_isNotFalse(vars.smoothChildTiming);
+        $eef254727dd68eca$var$_globalTimeline.remove(tl);
+        tl._dp = 0; //otherwise it'll get re-activated when adding children and be re-introduced into _globalTimeline's linked list (then added to itself).
+        tl._time = tl._tTime = $eef254727dd68eca$var$_globalTimeline._time;
+        child = $eef254727dd68eca$var$_globalTimeline._first;
+        while(child){
+            next = child._next;
+            if (includeDelayedCalls || !(!child._dur && child instanceof $eef254727dd68eca$export$208a41d6b4e37b97 && child.vars.onComplete === child._targets[0])) $eef254727dd68eca$var$_addToTimeline(tl, child, child._start - child._delay);
+            child = next;
+        }
+        $eef254727dd68eca$var$_addToTimeline($eef254727dd68eca$var$_globalTimeline, tl, 0);
+        return tl;
+    },
+    context: function context(func, scope) {
+        return func ? new $eef254727dd68eca$var$Context(func, scope) : $eef254727dd68eca$var$_context;
+    },
+    matchMedia: function matchMedia(scope) {
+        return new $eef254727dd68eca$var$MatchMedia(scope);
+    },
+    matchMediaRefresh: function matchMediaRefresh() {
+        return $eef254727dd68eca$var$_media.forEach(function(c) {
+            var cond = c.conditions, found, p;
+            for(p in cond)if (cond[p]) {
+                cond[p] = false;
+                found = 1;
+            }
+            found && c.revert();
+        }) || $eef254727dd68eca$var$_onMediaChange();
+    },
+    addEventListener: function addEventListener(type, callback) {
+        var a = $eef254727dd68eca$var$_listeners[type] || ($eef254727dd68eca$var$_listeners[type] = []);
+        ~a.indexOf(callback) || a.push(callback);
+    },
+    removeEventListener: function removeEventListener(type, callback) {
+        var a = $eef254727dd68eca$var$_listeners[type], i = a && a.indexOf(callback);
+        i >= 0 && a.splice(i, 1);
+    },
+    utils: {
+        wrap: $eef254727dd68eca$export$4997ffc0176396a6,
+        wrapYoyo: $eef254727dd68eca$export$cfc0b067273edc55,
+        distribute: $eef254727dd68eca$export$f02a9ddbe4480f19,
+        random: $eef254727dd68eca$export$4385e60b38654f68,
+        snap: $eef254727dd68eca$export$51a0620f7a28532b,
+        normalize: $eef254727dd68eca$export$a3295358bff77e,
+        getUnit: $eef254727dd68eca$export$65f2564e9a9b9222,
+        clamp: $eef254727dd68eca$export$7d15b64cf5a3a4c4,
+        splitColor: $eef254727dd68eca$export$73d6f35be992df24,
+        toArray: $eef254727dd68eca$export$45b10814cc054894,
+        selector: $eef254727dd68eca$export$aea217a45095ce11,
+        mapRange: $eef254727dd68eca$export$f65a7599bbc6b121,
+        pipe: $eef254727dd68eca$export$a4627e546088548d,
+        unitize: $eef254727dd68eca$export$d7502930aa5492de,
+        interpolate: $eef254727dd68eca$export$89e29e4ab65e70a9,
+        shuffle: $eef254727dd68eca$export$448332262467e042
+    },
+    install: $eef254727dd68eca$var$_install,
+    effects: $eef254727dd68eca$var$_effects,
+    ticker: $eef254727dd68eca$export$762ed8fbedb691e3,
+    updateRoot: $eef254727dd68eca$export$e6a97ba2cae5bb94.updateRoot,
+    plugins: $eef254727dd68eca$export$d305d8ec5d7c26b8,
+    globalTimeline: $eef254727dd68eca$var$_globalTimeline,
+    core: {
+        PropTween: $eef254727dd68eca$export$3a67f7f44b1e838a,
+        globals: $eef254727dd68eca$var$_addGlobal,
+        Tween: $eef254727dd68eca$export$208a41d6b4e37b97,
+        Timeline: $eef254727dd68eca$export$e6a97ba2cae5bb94,
+        Animation: $eef254727dd68eca$export$c35d437ae5945fcd,
+        getCache: $eef254727dd68eca$export$8b9be379d2de2a39,
+        _removeLinkedListItem: $eef254727dd68eca$export$cd008aa6cd8844e3,
+        reverting: function reverting() {
+            return $eef254727dd68eca$var$_reverting;
+        },
+        context: function context(toAdd) {
+            if (toAdd && $eef254727dd68eca$var$_context) {
+                $eef254727dd68eca$var$_context.data.push(toAdd);
+                toAdd._ctx = $eef254727dd68eca$var$_context;
+            }
+            return $eef254727dd68eca$var$_context;
+        },
+        suppressOverwrites: function suppressOverwrites(value) {
+            return $eef254727dd68eca$var$_suppressOverwrites = value;
+        }
+    }
+};
+$eef254727dd68eca$export$f9000b814859f126("to,from,fromTo,delayedCall,set,killTweensOf", function(name) {
+    return $eef254727dd68eca$var$_gsap[name] = $eef254727dd68eca$export$208a41d6b4e37b97[name];
+});
+$eef254727dd68eca$export$762ed8fbedb691e3.add($eef254727dd68eca$export$e6a97ba2cae5bb94.updateRoot);
+$eef254727dd68eca$var$_quickTween = $eef254727dd68eca$var$_gsap.to({}, {
+    duration: 0
+}); // ---- EXTRA PLUGINS --------------------------------------------------------
+var $eef254727dd68eca$var$_getPluginPropTween = function _getPluginPropTween(plugin, prop) {
+    var pt = plugin._pt;
+    while(pt && pt.p !== prop && pt.op !== prop && pt.fp !== prop)pt = pt._next;
+    return pt;
+}, $eef254727dd68eca$var$_addModifiers = function _addModifiers(tween, modifiers) {
+    var targets = tween._targets, p, i, pt;
+    for(p in modifiers){
+        i = targets.length;
+        while(i--){
+            pt = tween._ptLookup[i][p];
+            if (pt && (pt = pt.d)) {
+                if (pt._pt) // is a plugin
+                pt = $eef254727dd68eca$var$_getPluginPropTween(pt, p);
+                pt && pt.modifier && pt.modifier(modifiers[p], tween, targets[i], p);
+            }
+        }
+    }
+}, $eef254727dd68eca$var$_buildModifierPlugin = function _buildModifierPlugin(name, modifier) {
+    return {
+        name: name,
+        rawVars: 1,
+        //don't pre-process function-based values or "random()" strings.
+        init: function init(target, vars, tween) {
+            tween._onInit = function(tween) {
+                var temp, p;
+                if ($eef254727dd68eca$export$f664476fd67145ca(vars)) {
+                    temp = {};
+                    $eef254727dd68eca$export$f9000b814859f126(vars, function(name) {
+                        return temp[name] = 1;
+                    }); //if the user passes in a comma-delimited list of property names to roundProps, like "x,y", we round to whole numbers.
+                    vars = temp;
+                }
+                if (modifier) {
+                    temp = {};
+                    for(p in vars)temp[p] = modifier(vars[p]);
+                    vars = temp;
+                }
+                $eef254727dd68eca$var$_addModifiers(tween, vars);
+            };
+        }
+    };
+}; //register core plugins
+var $eef254727dd68eca$export$99ee26438460406a = $eef254727dd68eca$var$_gsap.registerPlugin({
+    name: "attr",
+    init: function init(target, vars, tween, index, targets) {
+        var p, pt, v;
+        this.tween = tween;
+        for(p in vars){
+            v = target.getAttribute(p) || "";
+            pt = this.add(target, "setAttribute", (v || 0) + "", vars[p], index, targets, 0, 0, p);
+            pt.op = p;
+            pt.b = v; // record the beginning value so we can revert()
+            this._props.push(p);
+        }
+    },
+    render: function render(ratio, data) {
+        var pt = data._pt;
+        while(pt){
+            $eef254727dd68eca$var$_reverting ? pt.set(pt.t, pt.p, pt.b, pt) : pt.r(ratio, pt.d); // if reverting, go back to the original (pt.b)
+            pt = pt._next;
+        }
+    }
+}, {
+    name: "endArray",
+    init: function init(target, value) {
+        var i = value.length;
+        while(i--)this.add(target, i, target[i] || 0, value[i], 0, 0, 0, 0, 0, 1);
+    }
+}, $eef254727dd68eca$var$_buildModifierPlugin("roundProps", $eef254727dd68eca$export$dd12390e6b265a17), $eef254727dd68eca$var$_buildModifierPlugin("modifiers"), $eef254727dd68eca$var$_buildModifierPlugin("snap", $eef254727dd68eca$export$51a0620f7a28532b)) || $eef254727dd68eca$var$_gsap; //to prevent the core plugins from being dropped via aggressive tree shaking, we must include them in the variable declaration in this way.
+$eef254727dd68eca$export$208a41d6b4e37b97.version = $eef254727dd68eca$export$e6a97ba2cae5bb94.version = $eef254727dd68eca$export$99ee26438460406a.version = "3.11.2";
+$eef254727dd68eca$var$_coreReady = 1;
+$eef254727dd68eca$var$_windowExists() && $eef254727dd68eca$var$_wake();
+var $eef254727dd68eca$export$2fae1e8613537d5f = $eef254727dd68eca$var$_easeMap.Power0, $eef254727dd68eca$export$5d84ab4efbecec39 = $eef254727dd68eca$var$_easeMap.Power1, $eef254727dd68eca$export$d8c694b7490ad65d = $eef254727dd68eca$var$_easeMap.Power2, $eef254727dd68eca$export$acebdf2b184a0b6f = $eef254727dd68eca$var$_easeMap.Power3, $eef254727dd68eca$export$42e40a141003d2f0 = $eef254727dd68eca$var$_easeMap.Power4, $eef254727dd68eca$export$cff00ccf6e2392de = $eef254727dd68eca$var$_easeMap.Linear, $eef254727dd68eca$export$7005c9eb6671414d = $eef254727dd68eca$var$_easeMap.Quad, $eef254727dd68eca$export$755261d5a1567778 = $eef254727dd68eca$var$_easeMap.Cubic, $eef254727dd68eca$export$daf531446cad3d2a = $eef254727dd68eca$var$_easeMap.Quart, $eef254727dd68eca$export$4c407d38ce8ad8cc = $eef254727dd68eca$var$_easeMap.Quint, $eef254727dd68eca$export$f301627d437cff88 = $eef254727dd68eca$var$_easeMap.Strong, $eef254727dd68eca$export$56ebabebb04a9ca9 = $eef254727dd68eca$var$_easeMap.Elastic, $eef254727dd68eca$export$25e48ac541203d4a = $eef254727dd68eca$var$_easeMap.Back, $eef254727dd68eca$export$f7a11c7543d81853 = $eef254727dd68eca$var$_easeMap.SteppedEase, $eef254727dd68eca$export$d20e79fdc3899e95 = $eef254727dd68eca$var$_easeMap.Bounce, $eef254727dd68eca$export$bed2d20ad96b784c = $eef254727dd68eca$var$_easeMap.Sine, $eef254727dd68eca$export$41e9d1ff1a2fb15a = $eef254727dd68eca$var$_easeMap.Expo, $eef254727dd68eca$export$ce49a57dd865b86c = $eef254727dd68eca$var$_easeMap.Circ;
+
+
+
+var $57ceb3254e6e0ac9$var$_win, $57ceb3254e6e0ac9$var$_doc, $57ceb3254e6e0ac9$var$_docElement, $57ceb3254e6e0ac9$var$_pluginInitted, $57ceb3254e6e0ac9$var$_tempDiv, $57ceb3254e6e0ac9$var$_tempDivStyler, $57ceb3254e6e0ac9$var$_recentSetterPlugin, $57ceb3254e6e0ac9$var$_reverting, $57ceb3254e6e0ac9$var$_windowExists = function _windowExists() {
+    return typeof window !== "undefined";
+}, $57ceb3254e6e0ac9$var$_transformProps = {}, $57ceb3254e6e0ac9$var$_RAD2DEG = 180 / Math.PI, $57ceb3254e6e0ac9$var$_DEG2RAD = Math.PI / 180, $57ceb3254e6e0ac9$var$_atan2 = Math.atan2, $57ceb3254e6e0ac9$var$_bigNum = 1e8, $57ceb3254e6e0ac9$var$_capsExp = /([A-Z])/g, $57ceb3254e6e0ac9$var$_horizontalExp = /(left|right|width|margin|padding|x)/i, $57ceb3254e6e0ac9$var$_complexExp = /[\s,\(]\S/, $57ceb3254e6e0ac9$var$_propertyAliases = {
+    autoAlpha: "opacity,visibility",
+    scale: "scaleX,scaleY",
+    alpha: "opacity"
+}, $57ceb3254e6e0ac9$var$_renderCSSProp = function _renderCSSProp(ratio, data) {
+    return data.set(data.t, data.p, Math.round((data.s + data.c * ratio) * 10000) / 10000 + data.u, data);
+}, $57ceb3254e6e0ac9$var$_renderPropWithEnd = function _renderPropWithEnd(ratio, data) {
+    return data.set(data.t, data.p, ratio === 1 ? data.e : Math.round((data.s + data.c * ratio) * 10000) / 10000 + data.u, data);
+}, $57ceb3254e6e0ac9$var$_renderCSSPropWithBeginning = function _renderCSSPropWithBeginning(ratio, data) {
+    return data.set(data.t, data.p, ratio ? Math.round((data.s + data.c * ratio) * 10000) / 10000 + data.u : data.b, data);
+}, //if units change, we need a way to render the original unit/value when the tween goes all the way back to the beginning (ratio:0)
+$57ceb3254e6e0ac9$var$_renderRoundedCSSProp = function _renderRoundedCSSProp(ratio, data) {
+    var value = data.s + data.c * ratio;
+    data.set(data.t, data.p, ~~(value + (value < 0 ? -0.5 : .5)) + data.u, data);
+}, $57ceb3254e6e0ac9$var$_renderNonTweeningValue = function _renderNonTweeningValue(ratio, data) {
+    return data.set(data.t, data.p, ratio ? data.e : data.b, data);
+}, $57ceb3254e6e0ac9$var$_renderNonTweeningValueOnlyAtEnd = function _renderNonTweeningValueOnlyAtEnd(ratio, data) {
+    return data.set(data.t, data.p, ratio !== 1 ? data.b : data.e, data);
+}, $57ceb3254e6e0ac9$var$_setterCSSStyle = function _setterCSSStyle(target, property, value) {
+    return target.style[property] = value;
+}, $57ceb3254e6e0ac9$var$_setterCSSProp = function _setterCSSProp(target, property, value) {
+    return target.style.setProperty(property, value);
+}, $57ceb3254e6e0ac9$var$_setterTransform = function _setterTransform(target, property, value) {
+    return target._gsap[property] = value;
+}, $57ceb3254e6e0ac9$var$_setterScale = function _setterScale(target, property, value) {
+    return target._gsap.scaleX = target._gsap.scaleY = value;
+}, $57ceb3254e6e0ac9$var$_setterScaleWithRender = function _setterScaleWithRender(target, property, value, data, ratio) {
+    var cache = target._gsap;
+    cache.scaleX = cache.scaleY = value;
+    cache.renderTransform(ratio, cache);
+}, $57ceb3254e6e0ac9$var$_setterTransformWithRender = function _setterTransformWithRender(target, property, value, data, ratio) {
+    var cache = target._gsap;
+    cache[property] = value;
+    cache.renderTransform(ratio, cache);
+}, $57ceb3254e6e0ac9$var$_transformProp = "transform", $57ceb3254e6e0ac9$var$_transformOriginProp = $57ceb3254e6e0ac9$var$_transformProp + "Origin", $57ceb3254e6e0ac9$var$_saveStyle = function _saveStyle(property, isNotCSS) {
+    var _this = this;
+    var target = this.target, style = target.style;
+    if (property in $57ceb3254e6e0ac9$var$_transformProps) {
+        this.tfm = this.tfm || {};
+        if (property !== "transform") {
+            property = $57ceb3254e6e0ac9$var$_propertyAliases[property] || property;
+            ~property.indexOf(",") ? property.split(",").forEach(function(a) {
+                return _this.tfm[a] = $57ceb3254e6e0ac9$var$_get(target, a);
+            }) : this.tfm[property] = target._gsap.x ? target._gsap[property] : $57ceb3254e6e0ac9$var$_get(target, property); // note: scale would map to "scaleX,scaleY", thus we loop and apply them both.
+        }
+        if (this.props.indexOf($57ceb3254e6e0ac9$var$_transformProp) >= 0) return;
+        if (target._gsap.svg) {
+            this.svgo = target.getAttribute("data-svg-origin");
+            this.props.push($57ceb3254e6e0ac9$var$_transformOriginProp, isNotCSS, "");
+        }
+        property = $57ceb3254e6e0ac9$var$_transformProp;
+    }
+    (style || isNotCSS) && this.props.push(property, isNotCSS, style[property]);
+}, $57ceb3254e6e0ac9$var$_removeIndependentTransforms = function _removeIndependentTransforms(style) {
+    if (style.translate) {
+        style.removeProperty("translate");
+        style.removeProperty("scale");
+        style.removeProperty("rotate");
+    }
+}, $57ceb3254e6e0ac9$var$_revertStyle = function _revertStyle() {
+    var props = this.props, target = this.target, style = target.style, cache = target._gsap, i, p;
+    for(i = 0; i < props.length; i += 3)// stored like this: property, isNotCSS, value
+    props[i + 1] ? target[props[i]] = props[i + 2] : props[i + 2] ? style[props[i]] = props[i + 2] : style.removeProperty(props[i].replace($57ceb3254e6e0ac9$var$_capsExp, "-$1").toLowerCase());
+    if (this.tfm) {
+        for(p in this.tfm)cache[p] = this.tfm[p];
+        if (cache.svg) {
+            cache.renderTransform();
+            target.setAttribute("data-svg-origin", this.svgo || "");
+        }
+        i = $57ceb3254e6e0ac9$var$_reverting();
+        if (i && !i.isStart && !style[$57ceb3254e6e0ac9$var$_transformProp]) {
+            $57ceb3254e6e0ac9$var$_removeIndependentTransforms(style);
+            cache.uncache = 1; // if it's a startAt that's being reverted in the _initTween() of the core, we don't need to uncache transforms. This is purely a performance optimization.
+        }
+    }
+}, $57ceb3254e6e0ac9$var$_getStyleSaver = function _getStyleSaver(target, properties) {
+    var saver = {
+        target: target,
+        props: [],
+        revert: $57ceb3254e6e0ac9$var$_revertStyle,
+        save: $57ceb3254e6e0ac9$var$_saveStyle
+    };
+    properties && properties.split(",").forEach(function(p) {
+        return saver.save(p);
+    });
+    return saver;
+}, $57ceb3254e6e0ac9$var$_supports3D, $57ceb3254e6e0ac9$export$a232bb0480ae674a = function _createElement(type, ns) {
+    var e = $57ceb3254e6e0ac9$var$_doc.createElementNS ? $57ceb3254e6e0ac9$var$_doc.createElementNS((ns || "http://www.w3.org/1999/xhtml").replace(/^https/, "http"), type) : $57ceb3254e6e0ac9$var$_doc.createElement(type); //some servers swap in https for http in the namespace which can break things, making "style" inaccessible.
+    return e.style ? e : $57ceb3254e6e0ac9$var$_doc.createElement(type); //some environments won't allow access to the element's style when created with a namespace in which case we default to the standard createElement() to work around the issue. Also note that when GSAP is embedded directly inside an SVG file, createElement() won't allow access to the style object in Firefox (see https://greensock.com/forums/topic/20215-problem-using-tweenmax-in-standalone-self-containing-svg-file-err-cannot-set-property-csstext-of-undefined/).
+}, $57ceb3254e6e0ac9$var$_getComputedProperty = function _getComputedProperty(target, property, skipPrefixFallback) {
+    var cs = getComputedStyle(target);
+    return cs[property] || cs.getPropertyValue(property.replace($57ceb3254e6e0ac9$var$_capsExp, "-$1").toLowerCase()) || cs.getPropertyValue(property) || !skipPrefixFallback && _getComputedProperty(target, $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b(property) || property, 1) || ""; //css variables may not need caps swapped out for dashes and lowercase.
+}, $57ceb3254e6e0ac9$var$_prefixes = "O,Moz,ms,Ms,Webkit".split(","), $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b = function _checkPropPrefix(property, element, preferPrefix) {
+    var e = element || $57ceb3254e6e0ac9$var$_tempDiv, s = e.style, i = 5;
+    if (property in s && !preferPrefix) return property;
+    property = property.charAt(0).toUpperCase() + property.substr(1);
+    while((i--) && !($57ceb3254e6e0ac9$var$_prefixes[i] + property in s));
+    return i < 0 ? null : (i === 3 ? "ms" : i >= 0 ? $57ceb3254e6e0ac9$var$_prefixes[i] : "") + property;
+}, $57ceb3254e6e0ac9$var$_initCore = function _initCore() {
+    if ($57ceb3254e6e0ac9$var$_windowExists() && window.document) {
+        $57ceb3254e6e0ac9$var$_win = window;
+        $57ceb3254e6e0ac9$var$_doc = $57ceb3254e6e0ac9$var$_win.document;
+        $57ceb3254e6e0ac9$var$_docElement = $57ceb3254e6e0ac9$var$_doc.documentElement;
+        $57ceb3254e6e0ac9$var$_tempDiv = $57ceb3254e6e0ac9$export$a232bb0480ae674a("div") || {
+            style: {}
+        };
+        $57ceb3254e6e0ac9$var$_tempDivStyler = $57ceb3254e6e0ac9$export$a232bb0480ae674a("div");
+        $57ceb3254e6e0ac9$var$_transformProp = $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b($57ceb3254e6e0ac9$var$_transformProp);
+        $57ceb3254e6e0ac9$var$_transformOriginProp = $57ceb3254e6e0ac9$var$_transformProp + "Origin";
+        $57ceb3254e6e0ac9$var$_tempDiv.style.cssText = "border-width:0;line-height:0;position:absolute;padding:0"; //make sure to override certain properties that may contaminate measurements, in case the user has overreaching style sheets.
+        $57ceb3254e6e0ac9$var$_supports3D = !!$57ceb3254e6e0ac9$export$8cbef5dd49a09c8b("perspective");
+        $57ceb3254e6e0ac9$var$_reverting = (0, $eef254727dd68eca$export$99ee26438460406a).core.reverting;
+        $57ceb3254e6e0ac9$var$_pluginInitted = 1;
+    }
+}, $57ceb3254e6e0ac9$var$_getBBoxHack = function _getBBoxHack(swapIfPossible) {
+    //works around issues in some browsers (like Firefox) that don't correctly report getBBox() on SVG elements inside a <defs> element and/or <mask>. We try creating an SVG, adding it to the documentElement and toss the element in there so that it's definitely part of the rendering tree, then grab the bbox and if it works, we actually swap out the original getBBox() method for our own that does these extra steps whenever getBBox is needed. This helps ensure that performance is optimal (only do all these extra steps when absolutely necessary...most elements don't need it).
+    var svg = $57ceb3254e6e0ac9$export$a232bb0480ae674a("svg", this.ownerSVGElement && this.ownerSVGElement.getAttribute("xmlns") || "http://www.w3.org/2000/svg"), oldParent = this.parentNode, oldSibling = this.nextSibling, oldCSS = this.style.cssText, bbox;
+    $57ceb3254e6e0ac9$var$_docElement.appendChild(svg);
+    svg.appendChild(this);
+    this.style.display = "block";
+    if (swapIfPossible) try {
+        bbox = this.getBBox();
+        this._gsapBBox = this.getBBox; //store the original
+        this.getBBox = _getBBoxHack;
+    } catch (e) {}
+    else if (this._gsapBBox) bbox = this._gsapBBox();
+    if (oldParent) {
+        if (oldSibling) oldParent.insertBefore(this, oldSibling);
+        else oldParent.appendChild(this);
+    }
+    $57ceb3254e6e0ac9$var$_docElement.removeChild(svg);
+    this.style.cssText = oldCSS;
+    return bbox;
+}, $57ceb3254e6e0ac9$var$_getAttributeFallbacks = function _getAttributeFallbacks(target, attributesArray) {
+    var i = attributesArray.length;
+    while(i--){
+        if (target.hasAttribute(attributesArray[i])) return target.getAttribute(attributesArray[i]);
+    }
+}, $57ceb3254e6e0ac9$export$41bc7c2d1e04f11b = function _getBBox(target) {
+    var bounds;
+    try {
+        bounds = target.getBBox(); //Firefox throws errors if you try calling getBBox() on an SVG element that's not rendered (like in a <symbol> or <defs>). https://bugzilla.mozilla.org/show_bug.cgi?id=612118
+    } catch (error) {
+        bounds = $57ceb3254e6e0ac9$var$_getBBoxHack.call(target, true);
+    }
+    bounds && (bounds.width || bounds.height) || target.getBBox === $57ceb3254e6e0ac9$var$_getBBoxHack || (bounds = $57ceb3254e6e0ac9$var$_getBBoxHack.call(target, true)); //some browsers (like Firefox) misreport the bounds if the element has zero width and height (it just assumes it's at x:0, y:0), thus we need to manually grab the position in that case.
+    return bounds && !bounds.width && !bounds.x && !bounds.y ? {
+        x: +$57ceb3254e6e0ac9$var$_getAttributeFallbacks(target, [
+            "x",
+            "cx",
+            "x1"
+        ]) || 0,
+        y: +$57ceb3254e6e0ac9$var$_getAttributeFallbacks(target, [
+            "y",
+            "cy",
+            "y1"
+        ]) || 0,
+        width: 0,
+        height: 0
+    } : bounds;
+}, $57ceb3254e6e0ac9$var$_isSVG = function _isSVG(e) {
+    return !!(e.getCTM && (!e.parentNode || e.ownerSVGElement) && $57ceb3254e6e0ac9$export$41bc7c2d1e04f11b(e));
+}, //reports if the element is an SVG on which getBBox() actually works
+$57ceb3254e6e0ac9$var$_removeProperty = function _removeProperty(target, property) {
+    if (property) {
+        var style = target.style;
+        if (property in $57ceb3254e6e0ac9$var$_transformProps && property !== $57ceb3254e6e0ac9$var$_transformOriginProp) property = $57ceb3254e6e0ac9$var$_transformProp;
+        if (style.removeProperty) {
+            if (property.substr(0, 2) === "ms" || property.substr(0, 6) === "webkit") //Microsoft and some Webkit browsers don't conform to the standard of capitalizing the first prefix character, so we adjust so that when we prefix the caps with a dash, it's correct (otherwise it'd be "ms-transform" instead of "-ms-transform" for IE9, for example)
+            property = "-" + property;
+            style.removeProperty(property.replace($57ceb3254e6e0ac9$var$_capsExp, "-$1").toLowerCase());
+        } else //note: old versions of IE use "removeAttribute()" instead of "removeProperty()"
+        style.removeAttribute(property);
+    }
+}, $57ceb3254e6e0ac9$var$_addNonTweeningPT = function _addNonTweeningPT(plugin, target, property, beginning, end, onlySetAtEnd) {
+    var pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(plugin._pt, target, property, 0, 1, onlySetAtEnd ? $57ceb3254e6e0ac9$var$_renderNonTweeningValueOnlyAtEnd : $57ceb3254e6e0ac9$var$_renderNonTweeningValue);
+    plugin._pt = pt;
+    pt.b = beginning;
+    pt.e = end;
+    plugin._props.push(property);
+    return pt;
+}, $57ceb3254e6e0ac9$var$_nonConvertibleUnits = {
+    deg: 1,
+    rad: 1,
+    turn: 1
+}, $57ceb3254e6e0ac9$var$_nonStandardLayouts = {
+    grid: 1,
+    flex: 1
+}, //takes a single value like 20px and converts it to the unit specified, like "%", returning only the numeric amount.
+$57ceb3254e6e0ac9$var$_convertToUnit = function _convertToUnit(target, property, value, unit) {
+    var curValue = parseFloat(value) || 0, curUnit = (value + "").trim().substr((curValue + "").length) || "px", // some browsers leave extra whitespace at the beginning of CSS variables, hence the need to trim()
+    style = $57ceb3254e6e0ac9$var$_tempDiv.style, horizontal = $57ceb3254e6e0ac9$var$_horizontalExp.test(property), isRootSVG = target.tagName.toLowerCase() === "svg", measureProperty = (isRootSVG ? "client" : "offset") + (horizontal ? "Width" : "Height"), amount = 100, toPixels = unit === "px", toPercent = unit === "%", px, parent, cache, isSVG;
+    if (unit === curUnit || !curValue || $57ceb3254e6e0ac9$var$_nonConvertibleUnits[unit] || $57ceb3254e6e0ac9$var$_nonConvertibleUnits[curUnit]) return curValue;
+    curUnit !== "px" && !toPixels && (curValue = _convertToUnit(target, property, value, "px"));
+    isSVG = target.getCTM && $57ceb3254e6e0ac9$var$_isSVG(target);
+    if ((toPercent || curUnit === "%") && ($57ceb3254e6e0ac9$var$_transformProps[property] || ~property.indexOf("adius"))) {
+        px = isSVG ? target.getBBox()[horizontal ? "width" : "height"] : target[measureProperty];
+        return (0, $eef254727dd68eca$export$9c8d725d65e13f94)(toPercent ? curValue / px * amount : curValue / 100 * px);
+    }
+    style[horizontal ? "width" : "height"] = amount + (toPixels ? curUnit : unit);
+    parent = ~property.indexOf("adius") || unit === "em" && target.appendChild && !isRootSVG ? target : target.parentNode;
+    if (isSVG) parent = (target.ownerSVGElement || {}).parentNode;
+    if (!parent || parent === $57ceb3254e6e0ac9$var$_doc || !parent.appendChild) parent = $57ceb3254e6e0ac9$var$_doc.body;
+    cache = parent._gsap;
+    if (cache && toPercent && cache.width && horizontal && cache.time === (0, $eef254727dd68eca$export$762ed8fbedb691e3).time && !cache.uncache) return (0, $eef254727dd68eca$export$9c8d725d65e13f94)(curValue / cache.width * amount);
+    else {
+        (toPercent || curUnit === "%") && !$57ceb3254e6e0ac9$var$_nonStandardLayouts[$57ceb3254e6e0ac9$var$_getComputedProperty(parent, "display")] && (style.position = $57ceb3254e6e0ac9$var$_getComputedProperty(target, "position"));
+        parent === target && (style.position = "static"); // like for borderRadius, if it's a % we must have it relative to the target itself but that may not have position: relative or position: absolute in which case it'd go up the chain until it finds its offsetParent (bad). position: static protects against that.
+        parent.appendChild($57ceb3254e6e0ac9$var$_tempDiv);
+        px = $57ceb3254e6e0ac9$var$_tempDiv[measureProperty];
+        parent.removeChild($57ceb3254e6e0ac9$var$_tempDiv);
+        style.position = "absolute";
+        if (horizontal && toPercent) {
+            cache = (0, $eef254727dd68eca$export$8b9be379d2de2a39)(parent);
+            cache.time = (0, $eef254727dd68eca$export$762ed8fbedb691e3).time;
+            cache.width = parent[measureProperty];
+        }
+    }
+    return (0, $eef254727dd68eca$export$9c8d725d65e13f94)(toPixels ? px * curValue / amount : px && curValue ? amount / px * curValue : 0);
+}, $57ceb3254e6e0ac9$var$_get = function _get(target, property, unit, uncache) {
+    var value;
+    $57ceb3254e6e0ac9$var$_pluginInitted || $57ceb3254e6e0ac9$var$_initCore();
+    if (property in $57ceb3254e6e0ac9$var$_propertyAliases && property !== "transform") {
+        property = $57ceb3254e6e0ac9$var$_propertyAliases[property];
+        if (~property.indexOf(",")) property = property.split(",")[0];
+    }
+    if ($57ceb3254e6e0ac9$var$_transformProps[property] && property !== "transform") {
+        value = $57ceb3254e6e0ac9$var$_parseTransform(target, uncache);
+        value = property !== "transformOrigin" ? value[property] : value.svg ? value.origin : $57ceb3254e6e0ac9$var$_firstTwoOnly($57ceb3254e6e0ac9$var$_getComputedProperty(target, $57ceb3254e6e0ac9$var$_transformOriginProp)) + " " + value.zOrigin + "px";
+    } else {
+        value = target.style[property];
+        if (!value || value === "auto" || uncache || ~(value + "").indexOf("calc(")) value = $57ceb3254e6e0ac9$var$_specialProps[property] && $57ceb3254e6e0ac9$var$_specialProps[property](target, property, unit) || $57ceb3254e6e0ac9$var$_getComputedProperty(target, property) || (0, $eef254727dd68eca$export$51d6bbe898aef1f9)(target, property) || (property === "opacity" ? 1 : 0); // note: some browsers, like Firefox, don't report borderRadius correctly! Instead, it only reports every corner like  borderTopLeftRadius
+    }
+    return unit && !~(value + "").trim().indexOf(" ") ? $57ceb3254e6e0ac9$var$_convertToUnit(target, property, value, unit) + unit : value;
+}, $57ceb3254e6e0ac9$var$_tweenComplexCSSString = function _tweenComplexCSSString(target, prop, start, end) {
+    // note: we call _tweenComplexCSSString.call(pluginInstance...) to ensure that it's scoped properly. We may call it from within a plugin too, thus "this" would refer to the plugin.
+    if (!start || start === "none") {
+        // some browsers like Safari actually PREFER the prefixed property and mis-report the unprefixed value like clipPath (BUG). In other words, even though clipPath exists in the style ("clipPath" in target.style) and it's set in the CSS properly (along with -webkit-clip-path), Safari reports clipPath as "none" whereas WebkitClipPath reports accurately like "ellipse(100% 0% at 50% 0%)", so in this case we must SWITCH to using the prefixed property instead. See https://greensock.com/forums/topic/18310-clippath-doesnt-work-on-ios/
+        var p = $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b(prop, target, 1), s = p && $57ceb3254e6e0ac9$var$_getComputedProperty(target, p, 1);
+        if (s && s !== start) {
+            prop = p;
+            start = s;
+        } else if (prop === "borderColor") start = $57ceb3254e6e0ac9$var$_getComputedProperty(target, "borderTopColor"); // Firefox bug: always reports "borderColor" as "", so we must fall back to borderTopColor. See https://greensock.com/forums/topic/24583-how-to-return-colors-that-i-had-after-reverse/
+    }
+    var pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(this._pt, target.style, prop, 0, 1, (0, $eef254727dd68eca$export$c5bc8e04394ecb2)), index = 0, matchIndex = 0, a, result, startValues, startNum, color, startValue, endValue, endNum, chunk, endUnit, startUnit, endValues;
+    pt.b = start;
+    pt.e = end;
+    start += ""; // ensure values are strings
+    end += "";
+    if (end === "auto") {
+        target.style[prop] = end;
+        end = $57ceb3254e6e0ac9$var$_getComputedProperty(target, prop) || end;
+        target.style[prop] = start;
+    }
+    a = [
+        start,
+        end
+    ];
+    (0, $eef254727dd68eca$export$7eb2e5eb5eeb96a4)(a); // pass an array with the starting and ending values and let the filter do whatever it needs to the values. If colors are found, it returns true and then we must match where the color shows up order-wise because for things like boxShadow, sometimes the browser provides the computed values with the color FIRST, but the user provides it with the color LAST, so flip them if necessary. Same for drop-shadow().
+    start = a[0];
+    end = a[1];
+    startValues = start.match((0, $eef254727dd68eca$export$65c88bbd597e7b0a)) || [];
+    endValues = end.match((0, $eef254727dd68eca$export$65c88bbd597e7b0a)) || [];
+    if (endValues.length) {
+        while(result = (0, $eef254727dd68eca$export$65c88bbd597e7b0a).exec(end)){
+            endValue = result[0];
+            chunk = end.substring(index, result.index);
+            if (color) color = (color + 1) % 5;
+            else if (chunk.substr(-5) === "rgba(" || chunk.substr(-5) === "hsla(") color = 1;
+            if (endValue !== (startValue = startValues[matchIndex++] || "")) {
+                startNum = parseFloat(startValue) || 0;
+                startUnit = startValue.substr((startNum + "").length);
+                endValue.charAt(1) === "=" && (endValue = (0, $eef254727dd68eca$export$dac762bc6301b560)(startNum, endValue) + startUnit);
+                endNum = parseFloat(endValue);
+                endUnit = endValue.substr((endNum + "").length);
+                index = (0, $eef254727dd68eca$export$65c88bbd597e7b0a).lastIndex - endUnit.length;
+                if (!endUnit) {
+                    //if something like "perspective:300" is passed in and we must add a unit to the end
+                    endUnit = endUnit || (0, $eef254727dd68eca$export$4922bee768729a77).units[prop] || startUnit;
+                    if (index === end.length) {
+                        end += endUnit;
+                        pt.e += endUnit;
+                    }
+                }
+                if (startUnit !== endUnit) startNum = $57ceb3254e6e0ac9$var$_convertToUnit(target, prop, startValue, endUnit) || 0;
+                 // these nested PropTweens are handled in a special way - we'll never actually call a render or setter method on them. We'll just loop through them in the parent complex string PropTween's render method.
+                pt._pt = {
+                    _next: pt._pt,
+                    p: chunk || matchIndex === 1 ? chunk : ",",
+                    //note: SVG spec allows omission of comma/space when a negative sign is wedged between two numbers, like 2.5-5.3 instead of 2.5,-5.3 but when tweening, the negative value may switch to positive, so we insert the comma just in case.
+                    s: startNum,
+                    c: endNum - startNum,
+                    m: color && color < 4 || prop === "zIndex" ? Math.round : 0
+                };
+            }
+        }
+        pt.c = index < end.length ? end.substring(index, end.length) : ""; //we use the "c" of the PropTween to store the final part of the string (after the last number)
+    } else pt.r = prop === "display" && end === "none" ? $57ceb3254e6e0ac9$var$_renderNonTweeningValueOnlyAtEnd : $57ceb3254e6e0ac9$var$_renderNonTweeningValue;
+    (0, $eef254727dd68eca$export$5a680e28b0b61bc).test(end) && (pt.e = 0); //if the end string contains relative values or dynamic random(...) values, delete the end it so that on the final render we don't actually set it to the string with += or -= characters (forces it to use the calculated value).
+    this._pt = pt; //start the linked list with this new PropTween. Remember, we call _tweenComplexCSSString.call(pluginInstance...) to ensure that it's scoped properly. We may call it from within another plugin too, thus "this" would refer to the plugin.
+    return pt;
+}, $57ceb3254e6e0ac9$var$_keywordToPercent = {
+    top: "0%",
+    bottom: "100%",
+    left: "0%",
+    right: "100%",
+    center: "50%"
+}, $57ceb3254e6e0ac9$var$_convertKeywordsToPercentages = function _convertKeywordsToPercentages(value) {
+    var split = value.split(" "), x = split[0], y = split[1] || "50%";
+    if (x === "top" || x === "bottom" || y === "left" || y === "right") {
+        //the user provided them in the wrong order, so flip them
+        value = x;
+        x = y;
+        y = value;
+    }
+    split[0] = $57ceb3254e6e0ac9$var$_keywordToPercent[x] || x;
+    split[1] = $57ceb3254e6e0ac9$var$_keywordToPercent[y] || y;
+    return split.join(" ");
+}, $57ceb3254e6e0ac9$var$_renderClearProps = function _renderClearProps(ratio, data) {
+    if (data.tween && data.tween._time === data.tween._dur) {
+        var target = data.t, style = target.style, props = data.u, cache = target._gsap, prop, clearTransforms, i;
+        if (props === "all" || props === true) {
+            style.cssText = "";
+            clearTransforms = 1;
+        } else {
+            props = props.split(",");
+            i = props.length;
+            while(--i > -1){
+                prop = props[i];
+                if ($57ceb3254e6e0ac9$var$_transformProps[prop]) {
+                    clearTransforms = 1;
+                    prop = prop === "transformOrigin" ? $57ceb3254e6e0ac9$var$_transformOriginProp : $57ceb3254e6e0ac9$var$_transformProp;
+                }
+                $57ceb3254e6e0ac9$var$_removeProperty(target, prop);
+            }
+        }
+        if (clearTransforms) {
+            $57ceb3254e6e0ac9$var$_removeProperty(target, $57ceb3254e6e0ac9$var$_transformProp);
+            if (cache) {
+                cache.svg && target.removeAttribute("transform");
+                $57ceb3254e6e0ac9$var$_parseTransform(target, 1); // force all the cached values back to "normal"/identity, otherwise if there's another tween that's already set to render transforms on this element, it could display the wrong values.
+                cache.uncache = 1;
+                $57ceb3254e6e0ac9$var$_removeIndependentTransforms(style);
+            }
+        }
+    }
+}, // note: specialProps should return 1 if (and only if) they have a non-zero priority. It indicates we need to sort the linked list.
+$57ceb3254e6e0ac9$var$_specialProps = {
+    clearProps: function clearProps(plugin, target, property, endValue, tween) {
+        if (tween.data !== "isFromStart") {
+            var pt = plugin._pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(plugin._pt, target, property, 0, 0, $57ceb3254e6e0ac9$var$_renderClearProps);
+            pt.u = endValue;
+            pt.pr = -10;
+            pt.tween = tween;
+            plugin._props.push(property);
+            return 1;
+        }
+    }
+}, /*
+ * --------------------------------------------------------------------------------------
+ * TRANSFORMS
+ * --------------------------------------------------------------------------------------
+ */ $57ceb3254e6e0ac9$var$_identity2DMatrix = [
+    1,
+    0,
+    0,
+    1,
+    0,
+    0
+], $57ceb3254e6e0ac9$var$_rotationalProperties = {}, $57ceb3254e6e0ac9$var$_isNullTransform = function _isNullTransform(value) {
+    return value === "matrix(1, 0, 0, 1, 0, 0)" || value === "none" || !value;
+}, $57ceb3254e6e0ac9$var$_getComputedTransformMatrixAsArray = function _getComputedTransformMatrixAsArray(target) {
+    var matrixString = $57ceb3254e6e0ac9$var$_getComputedProperty(target, $57ceb3254e6e0ac9$var$_transformProp);
+    return $57ceb3254e6e0ac9$var$_isNullTransform(matrixString) ? $57ceb3254e6e0ac9$var$_identity2DMatrix : matrixString.substr(7).match((0, $eef254727dd68eca$export$b9d44bb6523120d6)).map((0, $eef254727dd68eca$export$9c8d725d65e13f94));
+}, $57ceb3254e6e0ac9$var$_getMatrix = function _getMatrix(target, force2D) {
+    var cache = target._gsap || (0, $eef254727dd68eca$export$8b9be379d2de2a39)(target), style = target.style, matrix = $57ceb3254e6e0ac9$var$_getComputedTransformMatrixAsArray(target), parent, nextSibling, temp, addedToDOM;
+    if (cache.svg && target.getAttribute("transform")) {
+        temp = target.transform.baseVal.consolidate().matrix; //ensures that even complex values like "translate(50,60) rotate(135,0,0)" are parsed because it mashes it into a matrix.
+        matrix = [
+            temp.a,
+            temp.b,
+            temp.c,
+            temp.d,
+            temp.e,
+            temp.f
+        ];
+        return matrix.join(",") === "1,0,0,1,0,0" ? $57ceb3254e6e0ac9$var$_identity2DMatrix : matrix;
+    } else if (matrix === $57ceb3254e6e0ac9$var$_identity2DMatrix && !target.offsetParent && target !== $57ceb3254e6e0ac9$var$_docElement && !cache.svg) {
+        //note: if offsetParent is null, that means the element isn't in the normal document flow, like if it has display:none or one of its ancestors has display:none). Firefox returns null for getComputedStyle() if the element is in an iframe that has display:none. https://bugzilla.mozilla.org/show_bug.cgi?id=548397
+        //browsers don't report transforms accurately unless the element is in the DOM and has a display value that's not "none". Firefox and Microsoft browsers have a partial bug where they'll report transforms even if display:none BUT not any percentage-based values like translate(-50%, 8px) will be reported as if it's translate(0, 8px).
+        temp = style.display;
+        style.display = "block";
+        parent = target.parentNode;
+        if (!parent || !target.offsetParent) {
+            // note: in 3.3.0 we switched target.offsetParent to _doc.body.contains(target) to avoid [sometimes unnecessary] MutationObserver calls but that wasn't adequate because there are edge cases where nested position: fixed elements need to get reparented to accurately sense transforms. See https://github.com/greensock/GSAP/issues/388 and https://github.com/greensock/GSAP/issues/375
+            addedToDOM = 1; //flag
+            nextSibling = target.nextElementSibling;
+            $57ceb3254e6e0ac9$var$_docElement.appendChild(target); //we must add it to the DOM in order to get values properly
+        }
+        matrix = $57ceb3254e6e0ac9$var$_getComputedTransformMatrixAsArray(target);
+        temp ? style.display = temp : $57ceb3254e6e0ac9$var$_removeProperty(target, "display");
+        if (addedToDOM) nextSibling ? parent.insertBefore(target, nextSibling) : parent ? parent.appendChild(target) : $57ceb3254e6e0ac9$var$_docElement.removeChild(target);
+    }
+    return force2D && matrix.length > 6 ? [
+        matrix[0],
+        matrix[1],
+        matrix[4],
+        matrix[5],
+        matrix[12],
+        matrix[13]
+    ] : matrix;
+}, $57ceb3254e6e0ac9$var$_applySVGOrigin = function _applySVGOrigin(target, origin, originIsAbsolute, smooth, matrixArray, pluginToAddPropTweensTo) {
+    var cache = target._gsap, matrix = matrixArray || $57ceb3254e6e0ac9$var$_getMatrix(target, true), xOriginOld = cache.xOrigin || 0, yOriginOld = cache.yOrigin || 0, xOffsetOld = cache.xOffset || 0, yOffsetOld = cache.yOffset || 0, a = matrix[0], b = matrix[1], c = matrix[2], d = matrix[3], tx = matrix[4], ty = matrix[5], originSplit = origin.split(" "), xOrigin = parseFloat(originSplit[0]) || 0, yOrigin = parseFloat(originSplit[1]) || 0, bounds, determinant, x, y;
+    if (!originIsAbsolute) {
+        bounds = $57ceb3254e6e0ac9$export$41bc7c2d1e04f11b(target);
+        xOrigin = bounds.x + (~originSplit[0].indexOf("%") ? xOrigin / 100 * bounds.width : xOrigin);
+        yOrigin = bounds.y + (~(originSplit[1] || originSplit[0]).indexOf("%") ? yOrigin / 100 * bounds.height : yOrigin);
+    } else if (matrix !== $57ceb3254e6e0ac9$var$_identity2DMatrix && (determinant = a * d - b * c)) {
+        //if it's zero (like if scaleX and scaleY are zero), skip it to avoid errors with dividing by zero.
+        x = xOrigin * (d / determinant) + yOrigin * (-c / determinant) + (c * ty - d * tx) / determinant;
+        y = xOrigin * (-b / determinant) + yOrigin * (a / determinant) - (a * ty - b * tx) / determinant;
+        xOrigin = x;
+        yOrigin = y;
+    }
+    if (smooth || smooth !== false && cache.smooth) {
+        tx = xOrigin - xOriginOld;
+        ty = yOrigin - yOriginOld;
+        cache.xOffset = xOffsetOld + (tx * a + ty * c) - tx;
+        cache.yOffset = yOffsetOld + (tx * b + ty * d) - ty;
+    } else cache.xOffset = cache.yOffset = 0;
+    cache.xOrigin = xOrigin;
+    cache.yOrigin = yOrigin;
+    cache.smooth = !!smooth;
+    cache.origin = origin;
+    cache.originIsAbsolute = !!originIsAbsolute;
+    target.style[$57ceb3254e6e0ac9$var$_transformOriginProp] = "0px 0px"; //otherwise, if someone sets  an origin via CSS, it will likely interfere with the SVG transform attribute ones (because remember, we're baking the origin into the matrix() value).
+    if (pluginToAddPropTweensTo) {
+        $57ceb3254e6e0ac9$var$_addNonTweeningPT(pluginToAddPropTweensTo, cache, "xOrigin", xOriginOld, xOrigin);
+        $57ceb3254e6e0ac9$var$_addNonTweeningPT(pluginToAddPropTweensTo, cache, "yOrigin", yOriginOld, yOrigin);
+        $57ceb3254e6e0ac9$var$_addNonTweeningPT(pluginToAddPropTweensTo, cache, "xOffset", xOffsetOld, cache.xOffset);
+        $57ceb3254e6e0ac9$var$_addNonTweeningPT(pluginToAddPropTweensTo, cache, "yOffset", yOffsetOld, cache.yOffset);
+    }
+    target.setAttribute("data-svg-origin", xOrigin + " " + yOrigin);
+}, $57ceb3254e6e0ac9$var$_parseTransform = function _parseTransform(target, uncache) {
+    var cache = target._gsap || new (0, $eef254727dd68eca$export$cf10981d5419cad5)(target);
+    if ("x" in cache && !uncache && !cache.uncache) return cache;
+    var style = target.style, invertedScaleX = cache.scaleX < 0, px = "px", deg = "deg", cs = getComputedStyle(target), origin = $57ceb3254e6e0ac9$var$_getComputedProperty(target, $57ceb3254e6e0ac9$var$_transformOriginProp) || "0", x, y, z, scaleX, scaleY, rotation, rotationX, rotationY, skewX, skewY, perspective, xOrigin, yOrigin, matrix, angle, cos, sin, a, b, c, d, a12, a22, t1, t2, t3, a13, a23, a33, a42, a43, a32;
+    x = y = z = rotation = rotationX = rotationY = skewX = skewY = perspective = 0;
+    scaleX = scaleY = 1;
+    cache.svg = !!(target.getCTM && $57ceb3254e6e0ac9$var$_isSVG(target));
+    if (cs.translate) {
+        // accommodate independent transforms by combining them into normal ones.
+        if (cs.translate !== "none" || cs.scale !== "none" || cs.rotate !== "none") style[$57ceb3254e6e0ac9$var$_transformProp] = (cs.translate !== "none" ? "translate3d(" + (cs.translate + " 0 0").split(" ").slice(0, 3).join(", ") + ") " : "") + (cs.rotate !== "none" ? "rotate(" + cs.rotate + ") " : "") + (cs.scale !== "none" ? "scale(" + cs.scale.split(" ").join(",") + ") " : "") + (cs[$57ceb3254e6e0ac9$var$_transformProp] !== "none" ? cs[$57ceb3254e6e0ac9$var$_transformProp] : "");
+        style.scale = style.rotate = style.translate = "none";
+    }
+    matrix = $57ceb3254e6e0ac9$var$_getMatrix(target, cache.svg);
+    if (cache.svg) {
+        if (cache.uncache) {
+            // if cache.uncache is true (and maybe if origin is 0,0), we need to set element.style.transformOrigin = (cache.xOrigin - bbox.x) + "px " + (cache.yOrigin - bbox.y) + "px". Previously we let the data-svg-origin stay instead, but when introducing revert(), it complicated things.
+            t2 = target.getBBox();
+            origin = cache.xOrigin - t2.x + "px " + (cache.yOrigin - t2.y) + "px";
+            t1 = "";
+        } else t1 = !uncache && target.getAttribute("data-svg-origin"); //  Remember, to work around browser inconsistencies we always force SVG elements' transformOrigin to 0,0 and offset the translation accordingly.
+        $57ceb3254e6e0ac9$var$_applySVGOrigin(target, t1 || origin, !!t1 || cache.originIsAbsolute, cache.smooth !== false, matrix);
+    }
+    xOrigin = cache.xOrigin || 0;
+    yOrigin = cache.yOrigin || 0;
+    if (matrix !== $57ceb3254e6e0ac9$var$_identity2DMatrix) {
+        a = matrix[0]; //a11
+        b = matrix[1]; //a21
+        c = matrix[2]; //a31
+        d = matrix[3]; //a41
+        x = a12 = matrix[4];
+        y = a22 = matrix[5]; //2D matrix
+        if (matrix.length === 6) {
+            scaleX = Math.sqrt(a * a + b * b);
+            scaleY = Math.sqrt(d * d + c * c);
+            rotation = a || b ? $57ceb3254e6e0ac9$var$_atan2(b, a) * $57ceb3254e6e0ac9$var$_RAD2DEG : 0; //note: if scaleX is 0, we cannot accurately measure rotation. Same for skewX with a scaleY of 0. Therefore, we default to the previously recorded value (or zero if that doesn't exist).
+            skewX = c || d ? $57ceb3254e6e0ac9$var$_atan2(c, d) * $57ceb3254e6e0ac9$var$_RAD2DEG + rotation : 0;
+            skewX && (scaleY *= Math.abs(Math.cos(skewX * $57ceb3254e6e0ac9$var$_DEG2RAD)));
+            if (cache.svg) {
+                x -= xOrigin - (xOrigin * a + yOrigin * c);
+                y -= yOrigin - (xOrigin * b + yOrigin * d);
+            } //3D matrix
+        } else {
+            a32 = matrix[6];
+            a42 = matrix[7];
+            a13 = matrix[8];
+            a23 = matrix[9];
+            a33 = matrix[10];
+            a43 = matrix[11];
+            x = matrix[12];
+            y = matrix[13];
+            z = matrix[14];
+            angle = $57ceb3254e6e0ac9$var$_atan2(a32, a33);
+            rotationX = angle * $57ceb3254e6e0ac9$var$_RAD2DEG; //rotationX
+            if (angle) {
+                cos = Math.cos(-angle);
+                sin = Math.sin(-angle);
+                t1 = a12 * cos + a13 * sin;
+                t2 = a22 * cos + a23 * sin;
+                t3 = a32 * cos + a33 * sin;
+                a13 = a12 * -sin + a13 * cos;
+                a23 = a22 * -sin + a23 * cos;
+                a33 = a32 * -sin + a33 * cos;
+                a43 = a42 * -sin + a43 * cos;
+                a12 = t1;
+                a22 = t2;
+                a32 = t3;
+            } //rotationY
+            angle = $57ceb3254e6e0ac9$var$_atan2(-c, a33);
+            rotationY = angle * $57ceb3254e6e0ac9$var$_RAD2DEG;
+            if (angle) {
+                cos = Math.cos(-angle);
+                sin = Math.sin(-angle);
+                t1 = a * cos - a13 * sin;
+                t2 = b * cos - a23 * sin;
+                t3 = c * cos - a33 * sin;
+                a43 = d * sin + a43 * cos;
+                a = t1;
+                b = t2;
+                c = t3;
+            } //rotationZ
+            angle = $57ceb3254e6e0ac9$var$_atan2(b, a);
+            rotation = angle * $57ceb3254e6e0ac9$var$_RAD2DEG;
+            if (angle) {
+                cos = Math.cos(angle);
+                sin = Math.sin(angle);
+                t1 = a * cos + b * sin;
+                t2 = a12 * cos + a22 * sin;
+                b = b * cos - a * sin;
+                a22 = a22 * cos - a12 * sin;
+                a = t1;
+                a12 = t2;
+            }
+            if (rotationX && Math.abs(rotationX) + Math.abs(rotation) > 359.9) {
+                //when rotationY is set, it will often be parsed as 180 degrees different than it should be, and rotationX and rotation both being 180 (it looks the same), so we adjust for that here.
+                rotationX = rotation = 0;
+                rotationY = 180 - rotationY;
+            }
+            scaleX = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(Math.sqrt(a * a + b * b + c * c));
+            scaleY = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(Math.sqrt(a22 * a22 + a32 * a32));
+            angle = $57ceb3254e6e0ac9$var$_atan2(a12, a22);
+            skewX = Math.abs(angle) > 0.0002 ? angle * $57ceb3254e6e0ac9$var$_RAD2DEG : 0;
+            perspective = a43 ? 1 / (a43 < 0 ? -a43 : a43) : 0;
+        }
+        if (cache.svg) {
+            //sense if there are CSS transforms applied on an SVG element in which case we must overwrite them when rendering. The transform attribute is more reliable cross-browser, but we can't just remove the CSS ones because they may be applied in a CSS rule somewhere (not just inline).
+            t1 = target.getAttribute("transform");
+            cache.forceCSS = target.setAttribute("transform", "") || !$57ceb3254e6e0ac9$var$_isNullTransform($57ceb3254e6e0ac9$var$_getComputedProperty(target, $57ceb3254e6e0ac9$var$_transformProp));
+            t1 && target.setAttribute("transform", t1);
+        }
+    }
+    if (Math.abs(skewX) > 90 && Math.abs(skewX) < 270) {
+        if (invertedScaleX) {
+            scaleX *= -1;
+            skewX += rotation <= 0 ? 180 : -180;
+            rotation += rotation <= 0 ? 180 : -180;
+        } else {
+            scaleY *= -1;
+            skewX += skewX <= 0 ? 180 : -180;
+        }
+    }
+    uncache = uncache || cache.uncache;
+    cache.x = x - ((cache.xPercent = x && (!uncache && cache.xPercent || (Math.round(target.offsetWidth / 2) === Math.round(-x) ? -50 : 0))) ? target.offsetWidth * cache.xPercent / 100 : 0) + px;
+    cache.y = y - ((cache.yPercent = y && (!uncache && cache.yPercent || (Math.round(target.offsetHeight / 2) === Math.round(-y) ? -50 : 0))) ? target.offsetHeight * cache.yPercent / 100 : 0) + px;
+    cache.z = z + px;
+    cache.scaleX = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(scaleX);
+    cache.scaleY = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(scaleY);
+    cache.rotation = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(rotation) + deg;
+    cache.rotationX = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(rotationX) + deg;
+    cache.rotationY = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(rotationY) + deg;
+    cache.skewX = skewX + deg;
+    cache.skewY = skewY + deg;
+    cache.transformPerspective = perspective + px;
+    if (cache.zOrigin = parseFloat(origin.split(" ")[2]) || 0) style[$57ceb3254e6e0ac9$var$_transformOriginProp] = $57ceb3254e6e0ac9$var$_firstTwoOnly(origin);
+    cache.xOffset = cache.yOffset = 0;
+    cache.force3D = (0, $eef254727dd68eca$export$4922bee768729a77).force3D;
+    cache.renderTransform = cache.svg ? $57ceb3254e6e0ac9$var$_renderSVGTransforms : $57ceb3254e6e0ac9$var$_supports3D ? $57ceb3254e6e0ac9$var$_renderCSSTransforms : $57ceb3254e6e0ac9$var$_renderNon3DTransforms;
+    cache.uncache = 0;
+    return cache;
+}, $57ceb3254e6e0ac9$var$_firstTwoOnly = function _firstTwoOnly(value) {
+    return (value = value.split(" "))[0] + " " + value[1];
+}, //for handling transformOrigin values, stripping out the 3rd dimension
+$57ceb3254e6e0ac9$var$_addPxTranslate = function _addPxTranslate(target, start, value) {
+    var unit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(start);
+    return (0, $eef254727dd68eca$export$9c8d725d65e13f94)(parseFloat(start) + parseFloat($57ceb3254e6e0ac9$var$_convertToUnit(target, "x", value + "px", unit))) + unit;
+}, $57ceb3254e6e0ac9$var$_renderNon3DTransforms = function _renderNon3DTransforms(ratio, cache) {
+    cache.z = "0px";
+    cache.rotationY = cache.rotationX = "0deg";
+    cache.force3D = 0;
+    $57ceb3254e6e0ac9$var$_renderCSSTransforms(ratio, cache);
+}, $57ceb3254e6e0ac9$var$_zeroDeg = "0deg", $57ceb3254e6e0ac9$var$_zeroPx = "0px", $57ceb3254e6e0ac9$var$_endParenthesis = ") ", $57ceb3254e6e0ac9$var$_renderCSSTransforms = function _renderCSSTransforms(ratio, cache) {
+    var _ref = cache || this, xPercent = _ref.xPercent, yPercent = _ref.yPercent, x = _ref.x, y = _ref.y, z = _ref.z, rotation = _ref.rotation, rotationY = _ref.rotationY, rotationX = _ref.rotationX, skewX = _ref.skewX, skewY = _ref.skewY, scaleX = _ref.scaleX, scaleY = _ref.scaleY, transformPerspective = _ref.transformPerspective, force3D = _ref.force3D, target = _ref.target, zOrigin = _ref.zOrigin, transforms = "", use3D = force3D === "auto" && ratio && ratio !== 1 || force3D === true; // Safari has a bug that causes it not to render 3D transform-origin values properly, so we force the z origin to 0, record it in the cache, and then do the math here to offset the translate values accordingly (basically do the 3D transform-origin part manually)
+    if (zOrigin && (rotationX !== $57ceb3254e6e0ac9$var$_zeroDeg || rotationY !== $57ceb3254e6e0ac9$var$_zeroDeg)) {
+        var angle = parseFloat(rotationY) * $57ceb3254e6e0ac9$var$_DEG2RAD, a13 = Math.sin(angle), a33 = Math.cos(angle), cos;
+        angle = parseFloat(rotationX) * $57ceb3254e6e0ac9$var$_DEG2RAD;
+        cos = Math.cos(angle);
+        x = $57ceb3254e6e0ac9$var$_addPxTranslate(target, x, a13 * cos * -zOrigin);
+        y = $57ceb3254e6e0ac9$var$_addPxTranslate(target, y, -Math.sin(angle) * -zOrigin);
+        z = $57ceb3254e6e0ac9$var$_addPxTranslate(target, z, a33 * cos * -zOrigin + zOrigin);
+    }
+    if (transformPerspective !== $57ceb3254e6e0ac9$var$_zeroPx) transforms += "perspective(" + transformPerspective + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (xPercent || yPercent) transforms += "translate(" + xPercent + "%, " + yPercent + "%) ";
+    if (use3D || x !== $57ceb3254e6e0ac9$var$_zeroPx || y !== $57ceb3254e6e0ac9$var$_zeroPx || z !== $57ceb3254e6e0ac9$var$_zeroPx) transforms += z !== $57ceb3254e6e0ac9$var$_zeroPx || use3D ? "translate3d(" + x + ", " + y + ", " + z + ") " : "translate(" + x + ", " + y + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (rotation !== $57ceb3254e6e0ac9$var$_zeroDeg) transforms += "rotate(" + rotation + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (rotationY !== $57ceb3254e6e0ac9$var$_zeroDeg) transforms += "rotateY(" + rotationY + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (rotationX !== $57ceb3254e6e0ac9$var$_zeroDeg) transforms += "rotateX(" + rotationX + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (skewX !== $57ceb3254e6e0ac9$var$_zeroDeg || skewY !== $57ceb3254e6e0ac9$var$_zeroDeg) transforms += "skew(" + skewX + ", " + skewY + $57ceb3254e6e0ac9$var$_endParenthesis;
+    if (scaleX !== 1 || scaleY !== 1) transforms += "scale(" + scaleX + ", " + scaleY + $57ceb3254e6e0ac9$var$_endParenthesis;
+    target.style[$57ceb3254e6e0ac9$var$_transformProp] = transforms || "translate(0, 0)";
+}, $57ceb3254e6e0ac9$var$_renderSVGTransforms = function _renderSVGTransforms(ratio, cache) {
+    var _ref2 = cache || this, xPercent = _ref2.xPercent, yPercent = _ref2.yPercent, x = _ref2.x, y = _ref2.y, rotation = _ref2.rotation, skewX = _ref2.skewX, skewY = _ref2.skewY, scaleX = _ref2.scaleX, scaleY = _ref2.scaleY, target = _ref2.target, xOrigin = _ref2.xOrigin, yOrigin = _ref2.yOrigin, xOffset = _ref2.xOffset, yOffset = _ref2.yOffset, forceCSS = _ref2.forceCSS, tx = parseFloat(x), ty = parseFloat(y), a11, a21, a12, a22, temp;
+    rotation = parseFloat(rotation);
+    skewX = parseFloat(skewX);
+    skewY = parseFloat(skewY);
+    if (skewY) {
+        //for performance reasons, we combine all skewing into the skewX and rotation values. Remember, a skewY of 10 degrees looks the same as a rotation of 10 degrees plus a skewX of 10 degrees.
+        skewY = parseFloat(skewY);
+        skewX += skewY;
+        rotation += skewY;
+    }
+    if (rotation || skewX) {
+        rotation *= $57ceb3254e6e0ac9$var$_DEG2RAD;
+        skewX *= $57ceb3254e6e0ac9$var$_DEG2RAD;
+        a11 = Math.cos(rotation) * scaleX;
+        a21 = Math.sin(rotation) * scaleX;
+        a12 = Math.sin(rotation - skewX) * -scaleY;
+        a22 = Math.cos(rotation - skewX) * scaleY;
+        if (skewX) {
+            skewY *= $57ceb3254e6e0ac9$var$_DEG2RAD;
+            temp = Math.tan(skewX - skewY);
+            temp = Math.sqrt(1 + temp * temp);
+            a12 *= temp;
+            a22 *= temp;
+            if (skewY) {
+                temp = Math.tan(skewY);
+                temp = Math.sqrt(1 + temp * temp);
+                a11 *= temp;
+                a21 *= temp;
+            }
+        }
+        a11 = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(a11);
+        a21 = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(a21);
+        a12 = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(a12);
+        a22 = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(a22);
+    } else {
+        a11 = scaleX;
+        a22 = scaleY;
+        a21 = a12 = 0;
+    }
+    if (tx && !~(x + "").indexOf("px") || ty && !~(y + "").indexOf("px")) {
+        tx = $57ceb3254e6e0ac9$var$_convertToUnit(target, "x", x, "px");
+        ty = $57ceb3254e6e0ac9$var$_convertToUnit(target, "y", y, "px");
+    }
+    if (xOrigin || yOrigin || xOffset || yOffset) {
+        tx = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(tx + xOrigin - (xOrigin * a11 + yOrigin * a12) + xOffset);
+        ty = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(ty + yOrigin - (xOrigin * a21 + yOrigin * a22) + yOffset);
+    }
+    if (xPercent || yPercent) {
+        //The SVG spec doesn't support percentage-based translation in the "transform" attribute, so we merge it into the translation to simulate it.
+        temp = target.getBBox();
+        tx = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(tx + xPercent / 100 * temp.width);
+        ty = (0, $eef254727dd68eca$export$9c8d725d65e13f94)(ty + yPercent / 100 * temp.height);
+    }
+    temp = "matrix(" + a11 + "," + a21 + "," + a12 + "," + a22 + "," + tx + "," + ty + ")";
+    target.setAttribute("transform", temp);
+    forceCSS && (target.style[$57ceb3254e6e0ac9$var$_transformProp] = temp); //some browsers prioritize CSS transforms over the transform attribute. When we sense that the user has CSS transforms applied, we must overwrite them this way (otherwise some browser simply won't render the transform attribute changes!)
+}, $57ceb3254e6e0ac9$var$_addRotationalPropTween = function _addRotationalPropTween(plugin, target, property, startNum, endValue) {
+    var cap = 360, isString = (0, $eef254727dd68eca$export$f664476fd67145ca)(endValue), endNum = parseFloat(endValue) * (isString && ~endValue.indexOf("rad") ? $57ceb3254e6e0ac9$var$_RAD2DEG : 1), change = endNum - startNum, finalValue = startNum + change + "deg", direction, pt;
+    if (isString) {
+        direction = endValue.split("_")[1];
+        if (direction === "short") {
+            change %= cap;
+            if (change !== change % (cap / 2)) change += change < 0 ? cap : -cap;
+        }
+        if (direction === "cw" && change < 0) change = (change + cap * $57ceb3254e6e0ac9$var$_bigNum) % cap - ~~(change / cap) * cap;
+        else if (direction === "ccw" && change > 0) change = (change - cap * $57ceb3254e6e0ac9$var$_bigNum) % cap - ~~(change / cap) * cap;
+    }
+    plugin._pt = pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(plugin._pt, target, property, startNum, change, $57ceb3254e6e0ac9$var$_renderPropWithEnd);
+    pt.e = finalValue;
+    pt.u = "deg";
+    plugin._props.push(property);
+    return pt;
+}, $57ceb3254e6e0ac9$var$_assign = function _assign(target, source) {
+    // Internet Explorer doesn't have Object.assign(), so we recreate it here.
+    for(var p in source)target[p] = source[p];
+    return target;
+}, $57ceb3254e6e0ac9$var$_addRawTransformPTs = function _addRawTransformPTs(plugin, transforms, target) {
+    //for handling cases where someone passes in a whole transform string, like transform: "scale(2, 3) rotate(20deg) translateY(30em)"
+    var startCache = $57ceb3254e6e0ac9$var$_assign({}, target._gsap), exclude = "perspective,force3D,transformOrigin,svgOrigin", style = target.style, endCache, p, startValue, endValue, startNum, endNum, startUnit, endUnit;
+    if (startCache.svg) {
+        startValue = target.getAttribute("transform");
+        target.setAttribute("transform", "");
+        style[$57ceb3254e6e0ac9$var$_transformProp] = transforms;
+        endCache = $57ceb3254e6e0ac9$var$_parseTransform(target, 1);
+        $57ceb3254e6e0ac9$var$_removeProperty(target, $57ceb3254e6e0ac9$var$_transformProp);
+        target.setAttribute("transform", startValue);
+    } else {
+        startValue = getComputedStyle(target)[$57ceb3254e6e0ac9$var$_transformProp];
+        style[$57ceb3254e6e0ac9$var$_transformProp] = transforms;
+        endCache = $57ceb3254e6e0ac9$var$_parseTransform(target, 1);
+        style[$57ceb3254e6e0ac9$var$_transformProp] = startValue;
+    }
+    for(p in $57ceb3254e6e0ac9$var$_transformProps){
+        startValue = startCache[p];
+        endValue = endCache[p];
+        if (startValue !== endValue && exclude.indexOf(p) < 0) {
+            //tweening to no perspective gives very unintuitive results - just keep the same perspective in that case.
+            startUnit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(startValue);
+            endUnit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(endValue);
+            startNum = startUnit !== endUnit ? $57ceb3254e6e0ac9$var$_convertToUnit(target, p, startValue, endUnit) : parseFloat(startValue);
+            endNum = parseFloat(endValue);
+            plugin._pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(plugin._pt, endCache, p, startNum, endNum - startNum, $57ceb3254e6e0ac9$var$_renderCSSProp);
+            plugin._pt.u = endUnit || 0;
+            plugin._props.push(p);
+        }
+    }
+    $57ceb3254e6e0ac9$var$_assign(endCache, startCache);
+}; // handle splitting apart padding, margin, borderWidth, and borderRadius into their 4 components. Firefox, for example, won't report borderRadius correctly - it will only do borderTopLeftRadius and the other corners. We also want to handle paddingTop, marginLeft, borderRightWidth, etc.
+(0, $eef254727dd68eca$export$f9000b814859f126)("padding,margin,Width,Radius", function(name, index) {
+    var t = "Top", r = "Right", b = "Bottom", l = "Left", props = (index < 3 ? [
+        t,
+        r,
+        b,
+        l
+    ] : [
+        t + l,
+        t + r,
+        b + r,
+        b + l
+    ]).map(function(side) {
+        return index < 2 ? name + side : "border" + side + name;
+    });
+    $57ceb3254e6e0ac9$var$_specialProps[index > 1 ? "border" + name : name] = function(plugin, target, property, endValue, tween) {
+        var a, vars;
+        if (arguments.length < 4) {
+            // getter, passed target, property, and unit (from _get())
+            a = props.map(function(prop) {
+                return $57ceb3254e6e0ac9$var$_get(plugin, prop, property);
+            });
+            vars = a.join(" ");
+            return vars.split(a[0]).length === 5 ? a[0] : vars;
+        }
+        a = (endValue + "").split(" ");
+        vars = {};
+        props.forEach(function(prop, i) {
+            return vars[prop] = a[i] = a[i] || a[(i - 1) / 2 | 0];
+        });
+        plugin.init(target, vars, tween);
+    };
+});
+var $57ceb3254e6e0ac9$export$855822f522f18eef = {
+    name: "css",
+    register: $57ceb3254e6e0ac9$var$_initCore,
+    targetTest: function targetTest(target) {
+        return target.style && target.nodeType;
+    },
+    init: function init(target, vars, tween, index, targets) {
+        var props = this._props, style = target.style, startAt = tween.vars.startAt, startValue, endValue, endNum, startNum, type, specialProp, p, startUnit, endUnit, relative, isTransformRelated, transformPropTween, cache, smooth, hasPriority, inlineProps;
+        $57ceb3254e6e0ac9$var$_pluginInitted || $57ceb3254e6e0ac9$var$_initCore(); // we may call init() multiple times on the same plugin instance, like when adding special properties, so make sure we don't overwrite the revert data or inlineProps
+        this.styles = this.styles || $57ceb3254e6e0ac9$var$_getStyleSaver(target);
+        inlineProps = this.styles.props;
+        this.tween = tween;
+        for(p in vars){
+            if (p === "autoRound") continue;
+            endValue = vars[p];
+            if ((0, $eef254727dd68eca$export$d305d8ec5d7c26b8)[p] && (0, $eef254727dd68eca$export$5c457b74208010cf)(p, vars, tween, index, target, targets)) continue;
+            type = typeof endValue;
+            specialProp = $57ceb3254e6e0ac9$var$_specialProps[p];
+            if (type === "function") {
+                endValue = endValue.call(tween, index, target, targets);
+                type = typeof endValue;
+            }
+            if (type === "string" && ~endValue.indexOf("random(")) endValue = (0, $eef254727dd68eca$export$d5962a97e3cde94d)(endValue);
+            if (specialProp) specialProp(this, target, p, endValue, tween) && (hasPriority = 1);
+            else if (p.substr(0, 2) === "--") {
+                //CSS variable
+                startValue = (getComputedStyle(target).getPropertyValue(p) + "").trim();
+                endValue += "";
+                (0, $eef254727dd68eca$export$dd733e62515be2bd).lastIndex = 0;
+                if (!(0, $eef254727dd68eca$export$dd733e62515be2bd).test(startValue)) {
+                    // colors don't have units
+                    startUnit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(startValue);
+                    endUnit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(endValue);
+                }
+                endUnit ? startUnit !== endUnit && (startValue = $57ceb3254e6e0ac9$var$_convertToUnit(target, p, startValue, endUnit) + endUnit) : startUnit && (endValue += startUnit);
+                this.add(style, "setProperty", startValue, endValue, index, targets, 0, 0, p);
+                props.push(p);
+                inlineProps.push(p, 0, style[p]);
+            } else if (type !== "undefined") {
+                if (startAt && p in startAt) {
+                    // in case someone hard-codes a complex value as the start, like top: "calc(2vh / 2)". Without this, it'd use the computed value (always in px)
+                    startValue = typeof startAt[p] === "function" ? startAt[p].call(tween, index, target, targets) : startAt[p];
+                    (0, $eef254727dd68eca$export$f664476fd67145ca)(startValue) && ~startValue.indexOf("random(") && (startValue = (0, $eef254727dd68eca$export$d5962a97e3cde94d)(startValue));
+                    (0, $eef254727dd68eca$export$65f2564e9a9b9222)(startValue + "") || (startValue += (0, $eef254727dd68eca$export$4922bee768729a77).units[p] || (0, $eef254727dd68eca$export$65f2564e9a9b9222)($57ceb3254e6e0ac9$var$_get(target, p)) || ""); // for cases when someone passes in a unitless value like {x: 100}; if we try setting translate(100, 0px) it won't work.
+                    (startValue + "").charAt(1) === "=" && (startValue = $57ceb3254e6e0ac9$var$_get(target, p)); // can't work with relative values
+                } else startValue = $57ceb3254e6e0ac9$var$_get(target, p);
+                startNum = parseFloat(startValue);
+                relative = type === "string" && endValue.charAt(1) === "=" && endValue.substr(0, 2);
+                relative && (endValue = endValue.substr(2));
+                endNum = parseFloat(endValue);
+                if (p in $57ceb3254e6e0ac9$var$_propertyAliases) {
+                    if (p === "autoAlpha") {
+                        //special case where we control the visibility along with opacity. We still allow the opacity value to pass through and get tweened.
+                        if (startNum === 1 && $57ceb3254e6e0ac9$var$_get(target, "visibility") === "hidden" && endNum) //if visibility is initially set to "hidden", we should interpret that as intent to make opacity 0 (a convenience)
+                        startNum = 0;
+                        inlineProps.push("visibility", 0, style.visibility);
+                        $57ceb3254e6e0ac9$var$_addNonTweeningPT(this, style, "visibility", startNum ? "inherit" : "hidden", endNum ? "inherit" : "hidden", !endNum);
+                    }
+                    if (p !== "scale" && p !== "transform") {
+                        p = $57ceb3254e6e0ac9$var$_propertyAliases[p];
+                        ~p.indexOf(",") && (p = p.split(",")[0]);
+                    }
+                }
+                isTransformRelated = p in $57ceb3254e6e0ac9$var$_transformProps; //--- TRANSFORM-RELATED ---
+                if (isTransformRelated) {
+                    this.styles.save(p);
+                    if (!transformPropTween) {
+                        cache = target._gsap;
+                        cache.renderTransform && !vars.parseTransform || $57ceb3254e6e0ac9$var$_parseTransform(target, vars.parseTransform); // if, for example, gsap.set(... {transform:"translateX(50vw)"}), the _get() call doesn't parse the transform, thus cache.renderTransform won't be set yet so force the parsing of the transform here.
+                        smooth = vars.smoothOrigin !== false && cache.smooth;
+                        transformPropTween = this._pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(this._pt, style, $57ceb3254e6e0ac9$var$_transformProp, 0, 1, cache.renderTransform, cache, 0, -1); //the first time through, create the rendering PropTween so that it runs LAST (in the linked list, we keep adding to the beginning)
+                        transformPropTween.dep = 1; //flag it as dependent so that if things get killed/overwritten and this is the only PropTween left, we can safely kill the whole tween.
+                    }
+                    if (p === "scale") {
+                        this._pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(this._pt, cache, "scaleY", startNum, (relative ? (0, $eef254727dd68eca$export$dac762bc6301b560)(startNum, relative + endNum) : endNum) - startNum || 0, $57ceb3254e6e0ac9$var$_renderCSSProp);
+                        this._pt.u = 0;
+                        props.push("scaleY", p);
+                        p += "X";
+                    } else if (p === "transformOrigin") {
+                        inlineProps.push($57ceb3254e6e0ac9$var$_transformOriginProp, 0, style[$57ceb3254e6e0ac9$var$_transformOriginProp]);
+                        endValue = $57ceb3254e6e0ac9$var$_convertKeywordsToPercentages(endValue); //in case something like "left top" or "bottom right" is passed in. Convert to percentages.
+                        if (cache.svg) $57ceb3254e6e0ac9$var$_applySVGOrigin(target, endValue, 0, smooth, 0, this);
+                        else {
+                            endUnit = parseFloat(endValue.split(" ")[2]) || 0; //handle the zOrigin separately!
+                            endUnit !== cache.zOrigin && $57ceb3254e6e0ac9$var$_addNonTweeningPT(this, cache, "zOrigin", cache.zOrigin, endUnit);
+                            $57ceb3254e6e0ac9$var$_addNonTweeningPT(this, style, p, $57ceb3254e6e0ac9$var$_firstTwoOnly(startValue), $57ceb3254e6e0ac9$var$_firstTwoOnly(endValue));
+                        }
+                        continue;
+                    } else if (p === "svgOrigin") {
+                        $57ceb3254e6e0ac9$var$_applySVGOrigin(target, endValue, 1, smooth, 0, this);
+                        continue;
+                    } else if (p in $57ceb3254e6e0ac9$var$_rotationalProperties) {
+                        $57ceb3254e6e0ac9$var$_addRotationalPropTween(this, cache, p, startNum, relative ? (0, $eef254727dd68eca$export$dac762bc6301b560)(startNum, relative + endValue) : endValue);
+                        continue;
+                    } else if (p === "smoothOrigin") {
+                        $57ceb3254e6e0ac9$var$_addNonTweeningPT(this, cache, "smooth", cache.smooth, endValue);
+                        continue;
+                    } else if (p === "force3D") {
+                        cache[p] = endValue;
+                        continue;
+                    } else if (p === "transform") {
+                        $57ceb3254e6e0ac9$var$_addRawTransformPTs(this, endValue, target);
+                        continue;
+                    }
+                } else if (!(p in style)) p = $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b(p) || p;
+                if (isTransformRelated || (endNum || endNum === 0) && (startNum || startNum === 0) && !$57ceb3254e6e0ac9$var$_complexExp.test(endValue) && p in style) {
+                    startUnit = (startValue + "").substr((startNum + "").length);
+                    endNum || (endNum = 0); // protect against NaN
+                    endUnit = (0, $eef254727dd68eca$export$65f2564e9a9b9222)(endValue) || (p in (0, $eef254727dd68eca$export$4922bee768729a77).units ? (0, $eef254727dd68eca$export$4922bee768729a77).units[p] : startUnit);
+                    startUnit !== endUnit && (startNum = $57ceb3254e6e0ac9$var$_convertToUnit(target, p, startValue, endUnit));
+                    this._pt = new (0, $eef254727dd68eca$export$3a67f7f44b1e838a)(this._pt, isTransformRelated ? cache : style, p, startNum, (relative ? (0, $eef254727dd68eca$export$dac762bc6301b560)(startNum, relative + endNum) : endNum) - startNum, !isTransformRelated && (endUnit === "px" || p === "zIndex") && vars.autoRound !== false ? $57ceb3254e6e0ac9$var$_renderRoundedCSSProp : $57ceb3254e6e0ac9$var$_renderCSSProp);
+                    this._pt.u = endUnit || 0;
+                    if (startUnit !== endUnit && endUnit !== "%") {
+                        //when the tween goes all the way back to the beginning, we need to revert it to the OLD/ORIGINAL value (with those units). We record that as a "b" (beginning) property and point to a render method that handles that. (performance optimization)
+                        this._pt.b = startValue;
+                        this._pt.r = $57ceb3254e6e0ac9$var$_renderCSSPropWithBeginning;
+                    }
+                } else if (!(p in style)) {
+                    if (p in target) //maybe it's not a style - it could be a property added directly to an element in which case we'll try to animate that.
+                    this.add(target, p, startValue || target[p], relative ? relative + endValue : endValue, index, targets);
+                    else {
+                        (0, $eef254727dd68eca$export$7fb54635790b59a5)(p, endValue);
+                        continue;
+                    }
+                } else $57ceb3254e6e0ac9$var$_tweenComplexCSSString.call(this, target, p, startValue, relative ? relative + endValue : endValue);
+                isTransformRelated || (p in style ? inlineProps.push(p, 0, style[p]) : inlineProps.push(p, 1, startValue || target[p]));
+                props.push(p);
+            }
+        }
+        hasPriority && (0, $eef254727dd68eca$export$eed5824f53346d57)(this);
+    },
+    render: function render(ratio, data) {
+        if (data.tween._time || !$57ceb3254e6e0ac9$var$_reverting()) {
+            var pt = data._pt;
+            while(pt){
+                pt.r(ratio, pt.d);
+                pt = pt._next;
+            }
+        } else data.styles.revert();
+    },
+    get: $57ceb3254e6e0ac9$var$_get,
+    aliases: $57ceb3254e6e0ac9$var$_propertyAliases,
+    getSetter: function getSetter(target, property, plugin) {
+        //returns a setter function that accepts target, property, value and applies it accordingly. Remember, properties like "x" aren't as simple as target.style.property = value because they've got to be applied to a proxy object and then merged into a transform string in a renderer.
+        var p = $57ceb3254e6e0ac9$var$_propertyAliases[property];
+        p && p.indexOf(",") < 0 && (property = p);
+        return property in $57ceb3254e6e0ac9$var$_transformProps && property !== $57ceb3254e6e0ac9$var$_transformOriginProp && (target._gsap.x || $57ceb3254e6e0ac9$var$_get(target, "x")) ? plugin && $57ceb3254e6e0ac9$var$_recentSetterPlugin === plugin ? property === "scale" ? $57ceb3254e6e0ac9$var$_setterScale : $57ceb3254e6e0ac9$var$_setterTransform : ($57ceb3254e6e0ac9$var$_recentSetterPlugin = plugin || {}, property === "scale" ? $57ceb3254e6e0ac9$var$_setterScaleWithRender : $57ceb3254e6e0ac9$var$_setterTransformWithRender) : target.style && !(0, $eef254727dd68eca$export$a8178c063a9fd3a1)(target.style[property]) ? $57ceb3254e6e0ac9$var$_setterCSSStyle : ~property.indexOf("-") ? $57ceb3254e6e0ac9$var$_setterCSSProp : (0, $eef254727dd68eca$export$d60fbc1e0278aaf0)(target, property);
+    },
+    core: {
+        _removeProperty: $57ceb3254e6e0ac9$var$_removeProperty,
+        _getMatrix: $57ceb3254e6e0ac9$var$_getMatrix
+    }
+};
+(0, $eef254727dd68eca$export$99ee26438460406a).utils.checkPrefix = $57ceb3254e6e0ac9$export$8cbef5dd49a09c8b;
+(0, $eef254727dd68eca$export$99ee26438460406a).core.getStyleSaver = $57ceb3254e6e0ac9$var$_getStyleSaver;
+(function(positionAndScale, rotation, others, aliases) {
+    var all = (0, $eef254727dd68eca$export$f9000b814859f126)(positionAndScale + "," + rotation + "," + others, function(name) {
+        $57ceb3254e6e0ac9$var$_transformProps[name] = 1;
+    });
+    (0, $eef254727dd68eca$export$f9000b814859f126)(rotation, function(name) {
+        (0, $eef254727dd68eca$export$4922bee768729a77).units[name] = "deg";
+        $57ceb3254e6e0ac9$var$_rotationalProperties[name] = 1;
+    });
+    $57ceb3254e6e0ac9$var$_propertyAliases[all[13]] = positionAndScale + "," + rotation;
+    (0, $eef254727dd68eca$export$f9000b814859f126)(aliases, function(name) {
+        var split = name.split(":");
+        $57ceb3254e6e0ac9$var$_propertyAliases[split[1]] = all[split[0]];
+    });
+})("x,y,z,scale,scaleX,scaleY,xPercent,yPercent", "rotation,rotationX,rotationY,skewX,skewY", "transform,transformOrigin,svgOrigin,force3D,smoothOrigin,transformPerspective", "0:translateX,1:translateY,2:translateZ,8:rotate,8:rotationZ,8:rotateZ,9:rotateX,10:rotateY");
+(0, $eef254727dd68eca$export$f9000b814859f126)("x,y,z,top,right,bottom,left,width,height,fontSize,padding,margin,perspective", function(name) {
+    (0, $eef254727dd68eca$export$4922bee768729a77).units[name] = "px";
+});
+(0, $eef254727dd68eca$export$99ee26438460406a).registerPlugin($57ceb3254e6e0ac9$export$855822f522f18eef);
+
+
+var $f5d6dc3e2355e925$export$99ee26438460406a = (0, $eef254727dd68eca$export$99ee26438460406a).registerPlugin((0, $57ceb3254e6e0ac9$export$855822f522f18eef)) || (0, $eef254727dd68eca$export$99ee26438460406a), // to protect from tree shaking
+$f5d6dc3e2355e925$export$7b23975ad686bf91 = $f5d6dc3e2355e925$export$99ee26438460406a.core.Tween;
+
+
+class $df23c5cc32457ab3$export$fed190818166dddb {
+    /**
+	 * Simulates a loading progress.
+	 * @param {Function} onProgressComplete callback
+	 * @return {GSAP Timeline}
+	 */ onComplete(onProgressComplete) {
+        return (0, $f5d6dc3e2355e925$export$99ee26438460406a).timeline().to(this.progressVal, {
+            duration: 1.5,
+            ease: "steps(14)",
+            value: 100,
+            onUpdate: ()=>this.DOM.el.innerHTML = Math.floor(this.progressVal.value) + "%",
+            onComplete: onProgressComplete
+        })// then hide it
+        .to(this.DOM.el, {
+            duration: 0.7,
+            ease: "power3.inOut",
+            opacity: 0
+        });
+    }
+    /**
+	 * Constructor.
+	 * @param {Element} DOM_el
+	 */ constructor(DOM_el){
+        // DOM elements
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "DOM", {
+            // Main element
+            el: null
+        });
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "progressVal", {
+            value: 0
+        });
+        this.DOM.el = DOM_el;
+    }
+}
+
+
+
+/**
+ * SplitType
+ * https://github.com/lukePeavey/SplitType
+ * @version 0.2.5
+ * @author Luke Peavey <lwpeavey@gmail.com>
+ */ function $e677edec019ae1f7$var$_classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) throw new TypeError("Cannot call a class as a function");
+}
+function $e677edec019ae1f7$var$_defineProperties(target, props) {
+    for(var i = 0; i < props.length; i++){
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
+    }
+}
+function $e677edec019ae1f7$var$_createClass(Constructor, protoProps, staticProps) {
+    if (protoProps) $e677edec019ae1f7$var$_defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) $e677edec019ae1f7$var$_defineProperties(Constructor, staticProps);
+    return Constructor;
+}
+/**
+ * Shallow merges the properties of an object with the target object. Only
+ * includes properties that exist on the target object. Non-writable properties
+ * on the target object will not be over-written.
+ *
+ * @param {Object} target
+ * @param {Object} object
+ */ function $e677edec019ae1f7$var$extend(target, object) {
+    return Object.getOwnPropertyNames(Object(target)).reduce(function(extended, key) {
+        var currentValue = Object.getOwnPropertyDescriptor(Object(target), key);
+        var newValue = Object.getOwnPropertyDescriptor(Object(object), key);
+        return Object.defineProperty(extended, key, newValue || currentValue);
+    }, {});
+}
+/**
+ * Parses user supplied settings objects.
+ */ function $e677edec019ae1f7$var$parseSettings(settings) {
+    var object = $e677edec019ae1f7$var$extend(settings);
+    if (object.types || object.split) // Support `split` as an alias for `types`
+    object.types = object.types || object.split;
+    if (object.absolute || object.position) // Support `position: absolute` as alias for `absolute: true`
+    object.absolute = object.absolute || /absolute/.test(settings.position);
+    return object;
+}
+/**
+ * Returns true if `value` is a non-null object.
+ * @param {any} value
+ * @return {boolean}
+ */ function $e677edec019ae1f7$var$isObject(value) {
+    return value !== null && typeof value === "object";
+}
+/**
+ * Checks if `value` is a valid array-like length.
+ * Original source: Lodash
+ *
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3)
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE)
+ * // => false
+ *
+ * _.isLength(Infinity)
+ * // => false
+ *
+ * _.isLength('3')
+ * // => false
+ */ function $e677edec019ae1f7$var$isLength(value) {
+    return typeof value === "number" && value > -1 && value % 1 === 0;
+}
+/**
+ * Checks if `value` is an array-like object
+ * @param {any} value
+ * @return {boolean} true if `value` is array-like`, else `false`
+ * @example
+ * isArrayLike(new Array())
+ * // => true
+ *
+ * isArrayLike(document.querySelectorAll('div'))
+ * // => true
+ *
+ * isArrayLike(document.getElementsByTagName('div'))
+ * // => true
+ *
+ * isArrayLike(() => {})
+ * // => false
+ *
+ * isArrayLike({foo: 'bar'})
+ * // => false
+ *
+ * * isArrayLike(null)
+ * // => false
+ */ function $e677edec019ae1f7$var$isArrayLike(value) {
+    return $e677edec019ae1f7$var$isObject(value) && $e677edec019ae1f7$var$isLength(value.length);
+}
+/**
+ * Coerces `value` to an `Array`.
+ *
+ * @param {any} value
+ * @return {any[]}
+ * @example
+ * // If `value` is any `Array`, returns original `Array`
+ * let arr = [1, 2]
+ * toArray(arr)
+ * // => arr
+ *
+ * // If `value` is an `ArrayLike`, its equivalent to `Array.from(value)`
+ * let nodeList = document.querySelectorAll('div')
+ * toArray(nodeList)
+ * // => HTMLElement[] s
+ *
+ * // If value is falsy, returns empty array
+ * toArray(null)
+ * // => []
+ *
+ * // For any other type of value, its equivalent to `Array.of(value)`
+ * let element = document.createElement('div')
+ * toArray(element)
+ * // => [element]
+ *
+ */ function $e677edec019ae1f7$var$toArray(value) {
+    if (Array.isArray(value)) return value;
+    if (value == null) return [];
+    return $e677edec019ae1f7$var$isArrayLike(value) ? Array.prototype.slice.call(value) : [
+        value
+    ];
+}
+/**
+ * Returns true if `input` is one of the following:
+ * - `Element`
+ * - `Text`
+ * - `Document`
+ * - `DocumentFragment`
+ */ function $e677edec019ae1f7$var$isNode(input) {
+    return $e677edec019ae1f7$var$isObject(input) && /^(1|3|11)$/.test(input.nodeType);
+}
+/**
+ * Checks if given value is a string
+ *
+ * @param {any} value
+ * @return {boolean} `true` if `value` is a string, else `false`
+ */ function $e677edec019ae1f7$var$isString(value) {
+    return typeof value === "string";
+}
+/**
+ * Flattens nested ArrayLike object (max 2 levels deep)
+ */ function $e677edec019ae1f7$var$flatten(obj) {
+    return $e677edec019ae1f7$var$toArray(obj).reduce(function(result, item) {
+        return result.concat($e677edec019ae1f7$var$toArray(item));
+    }, []);
+}
+/**
+ * Processes target elements for the splitType function. `target` can any
+ * of the following types.
+ * 1. `string` - A css selector
+ * 2. `HTMLElement` - A single element
+ * 3. `ArrayLike<HTMLElement>` - A collection of elements (ie NodeList)
+ * 4. `Array<HTMLElement | ArrayLike<HTMLElement>>` - An array of elements
+ *     and/or collections of elements
+ *
+ * Returns a flat array of HTML elements. If `target` does not contain any
+ * valid elements, returns an empty array.
+ *
+ * @param {any} target
+ * @returns {HTMLElement[]} A flat array HTML elements
+ * @example
+ *
+ * // Single Element
+ * const element = document.createElement('div')
+ * getTargetElements()
+ * // => [element]
+ *
+ * const nodeList = document.querySelectorAll('div')
+ * getTargetElements(nodeList)
+ * // => HTMLElement[] (all elements in `nodeList`)
+ *
+ * const nodeListA = document.querySelectorAll('div')
+ * const nodeListB = document.querySelectorAll('p')
+ * getTargetElements([nodeListA, nodeListB])
+ * // => HTMLElement[] (all elements in `nodeListA` and `nodeListB`)
+ *
+ * // ID selector
+ * getTargetElements('#id')
+ * // => HTMLElement[]
+ *
+ * // Class selector
+ * getTargetElements('.text')
+ * // => HTMLElement[]
+ *
+ * // Non element object will not be returned
+ * getTargetElements({foo: bar})
+ * // => []
+ *
+ */ function $e677edec019ae1f7$var$getTargetElements(target) {
+    var elements = target; // If `target` is a selector string...
+    if ($e677edec019ae1f7$var$isString(target)) {
+        if (/^(#[a-z]\w+)$/.test(target.trim())) // If `target` is an ID, use `getElementById`
+        elements = document.getElementById(target.trim().slice(1));
+        else // Else use `querySelectorAll`
+        elements = document.querySelectorAll(target);
+    }
+    return $e677edec019ae1f7$var$flatten(elements).filter($e677edec019ae1f7$var$isNode);
+}
+/**
+ * Stores data associated with DOM elements. This is a simplified version of
+ * jQuery's data method.
+ */ function $e677edec019ae1f7$var$Data(owner, key, value) {
+    var data = {};
+    var id = null;
+    if ($e677edec019ae1f7$var$isObject(owner)) {
+        id = owner[$e677edec019ae1f7$var$Data.expando] || (owner[$e677edec019ae1f7$var$Data.expando] = ++$e677edec019ae1f7$var$Data.uid);
+        data = $e677edec019ae1f7$var$Data.cache[id] || ($e677edec019ae1f7$var$Data.cache[id] = {});
+    } // Get data
+    if (value === undefined) {
+        if (key === undefined) return data;
+        return data[key];
+    } else if (key !== undefined) {
+        data[key] = value;
+        return value;
+    }
+}
+$e677edec019ae1f7$var$Data.expando = "splitType".concat(new Date() * 1);
+$e677edec019ae1f7$var$Data.cache = {};
+$e677edec019ae1f7$var$Data.uid = 0; // Remove all data associated with the given element
+function $e677edec019ae1f7$var$RemoveData(element) {
+    var id = element && element[$e677edec019ae1f7$var$Data.expando];
+    if (id) {
+        delete element[id];
+        delete $e677edec019ae1f7$var$Data.cache[id];
+    }
+}
+/**
+ * Iterates values of an array or array-like object calling the provided
+ * `callback` for each item. Based on `array.forEach`
+ * @param {any} collection
+ * @param {function} callback
+ */ function $e677edec019ae1f7$var$forEach(collection, callback) {
+    var arr = $e677edec019ae1f7$var$toArray(collection);
+    for(var len = arr.length, i = 0; i < len; i++)callback(arr[i], i, arr);
+}
+/**
+ * Splits a string into an array of words.
+ *
+ * @param {string} string
+ * @param {string | RegExp} [separator = ' ']
+ * @return {string[]} Array of words
+ */ function $e677edec019ae1f7$var$toWords(string) {
+    var separator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : " ";
+    string = string ? String(string) : "";
+    return string.split(separator);
+}
+/**
+ * Based on lodash#split <https://lodash.com/license>
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters &
+ * Editors
+ */ var $e677edec019ae1f7$var$rsAstralRange = "\ud800-\udfff";
+var $e677edec019ae1f7$var$rsComboMarksRange = "\\u0300-\\u036f\\ufe20-\\ufe23";
+var $e677edec019ae1f7$var$rsComboSymbolsRange = "\\u20d0-\\u20f0";
+var $e677edec019ae1f7$var$rsVarRange = "\\ufe0e\\ufe0f";
+/** Used to compose unicode capture groups. */ var $e677edec019ae1f7$var$rsAstral = "[".concat($e677edec019ae1f7$var$rsAstralRange, "]");
+var $e677edec019ae1f7$var$rsCombo = "[".concat($e677edec019ae1f7$var$rsComboMarksRange).concat($e677edec019ae1f7$var$rsComboSymbolsRange, "]");
+var $e677edec019ae1f7$var$rsFitz = "\ud83c[\udffb-\udfff]";
+var $e677edec019ae1f7$var$rsModifier = "(?:".concat($e677edec019ae1f7$var$rsCombo, "|").concat($e677edec019ae1f7$var$rsFitz, ")");
+var $e677edec019ae1f7$var$rsNonAstral = "[^".concat($e677edec019ae1f7$var$rsAstralRange, "]");
+var $e677edec019ae1f7$var$rsRegional = "(?:\ud83c[\udde6-\uddff]){2}";
+var $e677edec019ae1f7$var$rsSurrPair = "[\ud800-\udbff][\udc00-\udfff]";
+var $e677edec019ae1f7$var$rsZWJ = "\\u200d";
+/** Used to compose unicode regexes. */ var $e677edec019ae1f7$var$reOptMod = "".concat($e677edec019ae1f7$var$rsModifier, "?");
+var $e677edec019ae1f7$var$rsOptVar = "[".concat($e677edec019ae1f7$var$rsVarRange, "]?");
+var $e677edec019ae1f7$var$rsOptJoin = "(?:" + $e677edec019ae1f7$var$rsZWJ + "(?:" + [
+    $e677edec019ae1f7$var$rsNonAstral,
+    $e677edec019ae1f7$var$rsRegional,
+    $e677edec019ae1f7$var$rsSurrPair
+].join("|") + ")" + $e677edec019ae1f7$var$rsOptVar + $e677edec019ae1f7$var$reOptMod + ")*";
+var $e677edec019ae1f7$var$rsSeq = $e677edec019ae1f7$var$rsOptVar + $e677edec019ae1f7$var$reOptMod + $e677edec019ae1f7$var$rsOptJoin;
+var $e677edec019ae1f7$var$rsSymbol = "(?:".concat([
+    "".concat($e677edec019ae1f7$var$rsNonAstral).concat($e677edec019ae1f7$var$rsCombo, "?"),
+    $e677edec019ae1f7$var$rsCombo,
+    $e677edec019ae1f7$var$rsRegional,
+    $e677edec019ae1f7$var$rsSurrPair,
+    $e677edec019ae1f7$var$rsAstral
+].join("|"), "\n)");
+/** Used to match [string symbols](https://mathiasbynens.be/notes/javascript-unicode). */ var $e677edec019ae1f7$var$reUnicode = RegExp("".concat($e677edec019ae1f7$var$rsFitz, "(?=").concat($e677edec019ae1f7$var$rsFitz, ")|").concat($e677edec019ae1f7$var$rsSymbol).concat($e677edec019ae1f7$var$rsSeq), "g");
+/** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */ var $e677edec019ae1f7$var$unicodeRange = [
+    $e677edec019ae1f7$var$rsZWJ,
+    $e677edec019ae1f7$var$rsAstralRange,
+    $e677edec019ae1f7$var$rsComboMarksRange,
+    $e677edec019ae1f7$var$rsComboSymbolsRange,
+    $e677edec019ae1f7$var$rsVarRange
+];
+var $e677edec019ae1f7$var$reHasUnicode = RegExp("[".concat($e677edec019ae1f7$var$unicodeRange.join(""), "]"));
+/**
+ * Converts an ASCII `string` to an array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the converted array.
+ */ function $e677edec019ae1f7$var$asciiToArray(string) {
+    return string.split("");
+}
+/**
+ * Checks if `string` contains Unicode symbols.
+ *
+ * @private
+ * @param {string} string The string to inspect.
+ * @returns {boolean} Returns `true` if a symbol is found, else `false`.
+ */ function $e677edec019ae1f7$var$hasUnicode(string) {
+    return $e677edec019ae1f7$var$reHasUnicode.test(string);
+}
+/**
+ * Converts a Unicode `string` to an array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the converted array.
+ */ function $e677edec019ae1f7$var$unicodeToArray(string) {
+    return string.match($e677edec019ae1f7$var$reUnicode) || [];
+}
+/**
+ * Converts `string` to an array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the converted array.
+ */ function $e677edec019ae1f7$var$stringToArray(string) {
+    return $e677edec019ae1f7$var$hasUnicode(string) ? $e677edec019ae1f7$var$unicodeToArray(string) : $e677edec019ae1f7$var$asciiToArray(string);
+}
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values.
+ *
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */ function $e677edec019ae1f7$var$toString(value) {
+    return value == null ? "" : String(value);
+}
+/**
+ * Splits `string` into an array of characters. If `separator` is omitted,
+ * it behaves likes split.split('').
+ *
+ * Unlike native string.split(''), it can split strings that contain unicode
+ * characters like emojis and symbols.
+ *
+ * @param {string} [string=''] The string to split.
+ * @param {RegExp|string} [separator=''] The separator pattern to split by.
+ * @returns {Array} Returns the string segments.
+ * @example
+ * toChars('foo');
+ * // => ['f', 'o', 'o']
+ *
+ * toChars('foo bar');
+ * // => ["f", "o", "o", " ", "b", "a", "r"]
+ *
+ * toChars('f😀o');
+ * // => ['f', '😀', 'o']
+ *
+ * toChars('f-😀-o', /-/);
+ * // => ['f', '😀', 'o']
+ *
+ */ function $e677edec019ae1f7$var$toChars(string) {
+    var separator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+    string = $e677edec019ae1f7$var$toString(string);
+    if (string && $e677edec019ae1f7$var$isString(string)) {
+        if (!separator && $e677edec019ae1f7$var$hasUnicode(string)) return $e677edec019ae1f7$var$stringToArray(string);
+    }
+    return string.split(separator);
+}
+/**
+ * Create an HTML element with the the given attributes
+ *
+ * attributes can include standard HTML attribute, as well as the following
+ * "special" properties:
+ *   - children: HTMLElement | ArrayLike<HTMLElement>
+ *   - textContent: string
+ *   - innerHTML: string
+ *
+ * @param {string} name
+ * @param  {Object} [attributes]
+ * @returns {HTMLElement}
+ */ function $e677edec019ae1f7$var$createElement(name, attributes) {
+    var element = document.createElement(name);
+    if (!attributes) // When called without the second argument, its just return the result
+    // of `document.createElement`
+    return element;
+    Object.keys(attributes).forEach(function(attribute) {
+        var value = attributes[attribute]; // Ignore attribute if value is `null`
+        if (value === null) return; // Handle `textContent` and `innerHTML`
+        if (attribute === "textContent" || attribute === "innerHTML") element[attribute] = value;
+        else if (attribute === "children") $e677edec019ae1f7$var$forEach(value, function(child) {
+            if ($e677edec019ae1f7$var$isNode(child)) element.appendChild(child);
+        });
+        else element.setAttribute(attribute, String(value).trim());
+    });
+    return element;
+}
+/**
+ * Takes a comma separated list of `types` and returns an objet
+ *
+ * @param {string | string[]} value a comma separated list of split types
+ * @return {{lines: boolean, words: boolean, chars: boolean}}
+ */ function $e677edec019ae1f7$var$parseTypes(value) {
+    var types = $e677edec019ae1f7$var$isString(value) || Array.isArray(value) ? String(value) : "";
+    return {
+        lines: /line/i.test(types),
+        words: /word/i.test(types),
+        chars: /(char)|(character)/i.test(types)
+    };
+}
+/**
+ * Gets the text content of an HTML element.
+ *
+ * Optionally, <br> tags can be replaced with a unique string so they can be
+ * converted back HTML later on.
+ *
+ * @param {HTMLElement} element
+ * @param {string} BR_SYMBOL
+ * @return {string} the text content of the given element
+ */ function $e677edec019ae1f7$var$getTextContent(element, LINE_BREAK_SYMBOL) {
+    var brTag = /<br\s*\/?>/g;
+    var textContent = element.textContent;
+    if (LINE_BREAK_SYMBOL) {
+        var innerHTML = element.innerHTML;
+        var tempDiv = document.createElement("div");
+        tempDiv.innerHTML = innerHTML.replace(brTag, " ".concat(LINE_BREAK_SYMBOL, " "));
+        textContent = tempDiv.textContent;
+    } // Remove extra white space
+    return textContent.replace(/\s+/g, " ").trim();
+}
+var $e677edec019ae1f7$var$defaults = {
+    splitClass: "",
+    lineClass: "line",
+    wordClass: "word",
+    charClass: "char",
+    types: "lines, words, chars",
+    absolute: false,
+    tagName: "div"
+};
+var $e677edec019ae1f7$var$createFragment = function createFragment() {
+    return document.createDocumentFragment();
+};
+var $e677edec019ae1f7$var$createTextNode = function createTextNode(str) {
+    return document.createTextNode(str);
+};
+/**
+ * Splits the text content of a single element using the provided settings.
+ * There are three possible split types: lines, words, and characters. Each one
+ * is optional, so text can be split into any combination of the three types.
+ *
+ * @param {HTMLElement} element the target element
+ * @param {Object} settings
+ * @return {{
+ *   lines: HTMLElement[],
+ *   words: HTMLElement[],
+ *   chars: HTMLElement[]
+ * }}
+ */ function $e677edec019ae1f7$var$splitSingleElement(element, settings) {
+    settings = $e677edec019ae1f7$var$extend($e677edec019ae1f7$var$defaults, settings); // The split types
+    var types = $e677edec019ae1f7$var$parseTypes(settings.types); // the tag name for split text nodes
+    var TAG_NAME = settings.tagName; // A unique string to temporarily replace <br> tags
+    var BR_SYMBOL = "B".concat(new Date() * 1, "R"); // (boolean) true if position is set to absolute
+    var isAbsolute = settings.position === "absolute" || settings.absolute; // The array of wrapped line elements
+    var lines = []; // The array of wrapped words elements
+    var words = []; // The array of wrapped character elements
+    var chars = []; // The plain text content of the target element
+    var splitText;
+    /**------------------------------------------------
+   ** SPLIT TEXT INTO WORDS AND CHARACTERS
+   **-----------------------------------------------*/ // `splitText` is a wrapper to hold the HTML structure
+    splitText = types.lines ? $e677edec019ae1f7$var$createElement("div") : $e677edec019ae1f7$var$createFragment(); // Get the element's text content.
+    var TEXT_CONTENT = $e677edec019ae1f7$var$getTextContent(element, BR_SYMBOL); // Create an array of wrapped word elements.
+    words = $e677edec019ae1f7$var$toWords(TEXT_CONTENT).reduce(function(result, WORD, idx, arr) {
+        // Let `wordElement` be the wrapped element for the current word
+        var wordElement;
+        var characterElementsForCurrentWord; // If the current word is a symbol representing a `<br>` tag,
+        // append a `<br>` tag to splitText and continue to the next word
+        if (WORD === BR_SYMBOL) {
+            splitText.appendChild($e677edec019ae1f7$var$createElement("br"));
+            return result;
+        } // If splitting text into characters...
+        if (types.chars) {
+            // Iterate through the characters in the current word
+            // TODO: support emojis in text
+            characterElementsForCurrentWord = $e677edec019ae1f7$var$toChars(WORD).map(function(CHAR) {
+                return $e677edec019ae1f7$var$createElement(TAG_NAME, {
+                    class: "".concat(settings.splitClass, " ").concat(settings.charClass),
+                    style: "display: inline-block;",
+                    textContent: CHAR
+                });
+            }); // push the character nodes for this word onto the array of
+            // all character nodes
+            chars = chars.concat(characterElementsForCurrentWord);
+        } // END IF;
+        if (types.words || types.lines) {
+            // | If Splitting Text Into Words...
+            // | Create an element (`wordElement`) to wrap the current word.
+            // | If we are also splitting text into characters, the word element
+            // | will contain the wrapped character nodes for this word. If not,
+            // | it will contain the `WORD`
+            wordElement = $e677edec019ae1f7$var$createElement(TAG_NAME, {
+                class: "".concat(settings.wordClass, " ").concat(settings.splitClass),
+                style: "display: inline-block; position: ".concat(types.words ? "relative" : "static"),
+                children: types.chars ? characterElementsForCurrentWord : null,
+                textContent: !types.chars ? WORD : null
+            });
+            splitText.appendChild(wordElement);
+        } else // | If NOT splitting into words OR lines...
+        // | Append the characters elements directly to splitText.
+        $e677edec019ae1f7$var$forEach(characterElementsForCurrentWord, function(characterElement) {
+            splitText.appendChild(characterElement);
+        });
+        if (idx !== arr.length - 1) // Add a space after the word.
+        splitText.appendChild($e677edec019ae1f7$var$createTextNode(" "));
+         // If we not splitting text into words, we return an empty array
+        return types.words ? result.concat(wordElement) : result;
+    }, []); // 4. Replace the original HTML content of the element with the `splitText`
+    element.innerHTML = "";
+    element.appendChild(splitText); // Unless we are splitting text into lines or using
+    if (!isAbsolute && !types.lines) return {
+        chars: chars,
+        words: words,
+        lines: []
+    };
+    /**------------------------------------------------
+   ** GET STYLES AND POSITIONS
+   **-----------------------------------------------*/ // There is no built-in way to detect natural line breaks in text (when a
+    // block of text wraps to fit its container). To split text into lines, we
+    // have to detect line breaks by checking the top offset of words. This is
+    // why text was split into words first. To apply absolute
+    // positioning, its also necessary to record the size and position of every
+    // split node (lines, words, characters).
+    // To consolidate DOM getting/settings, this is all done at the same time,
+    // before actually splitting text into lines, which involves restructuring
+    // the DOM again.
+    var wordsInEachLine = [];
+    var wordsInCurrentLine = [];
+    var lineHeight;
+    var elementHeight;
+    var elementWidth;
+    var contentBox;
+    var lineOffsetY; // TODO: Is it necessary to store `nodes` in the cache?
+    // nodes is a live HTML collection of the nodes in this element
+    var nodes = $e677edec019ae1f7$var$Data(element, "nodes", element.getElementsByTagName(TAG_NAME)); // Cache the element's parent and next sibling (for DOM removal).
+    var parent = element.parentElement;
+    var nextSibling = element.nextElementSibling; // get the computed style object for the element
+    var cs = window.getComputedStyle(element);
+    var align = cs.textAlign; // If using absolute position...
+    if (isAbsolute) {
+        // Let contentBox be an object containing the width and offset position of
+        // the element's content box (the area inside padding box). This is needed
+        // (for absolute positioning) to set the width and position of line
+        // elements, which have not been created yet.
+        contentBox = {
+            left: splitText.offsetLeft,
+            top: splitText.offsetTop,
+            width: splitText.offsetWidth
+        }; // Let elementWidth and elementHeight equal the actual width/height of the
+        // element. Also check if the element has inline height or width styles
+        // already set. If it does, cache those values for later.
+        elementWidth = element.offsetWidth;
+        elementHeight = element.offsetHeight;
+        $e677edec019ae1f7$var$Data(element).cssWidth = element.style.width;
+        $e677edec019ae1f7$var$Data(element).cssHeight = element.style.height;
+    } // Iterate over every split text node
+    $e677edec019ae1f7$var$forEach(nodes, function(node) {
+        if (node === splitText) return;
+        var isWord = node.parentElement === splitText;
+        var wordOffsetY; // a. Detect line breaks by checking the top offset of word nodes.
+        //    For each line, create an array (line) containing the words in that
+        //    line.
+        if (types.lines && isWord) {
+            // wordOffsetY is the top offset of the current word.
+            wordOffsetY = $e677edec019ae1f7$var$Data(node, "top", node.offsetTop); // If wordOffsetY is different than the value of lineOffsetY...
+            // Then this word is the beginning of a new line.
+            // Set lineOffsetY to value of wordOffsetY.
+            // Create a new array (line) to hold the words in this line.
+            if (wordOffsetY !== lineOffsetY) {
+                lineOffsetY = wordOffsetY;
+                wordsInEachLine.push(wordsInCurrentLine = []);
+            } // Add the current word node to the line array
+            wordsInCurrentLine.push(node);
+        } // b. Get the size and position of all split text nodes.
+        if (isAbsolute) {
+            // The values are stored using the data method
+            // All split nodes have the same height (lineHeight). So its only
+            // retrieved once.
+            // If offset top has already been cached (step 11 a) use the stored value.
+            $e677edec019ae1f7$var$Data(node).top = wordOffsetY || node.offsetTop;
+            $e677edec019ae1f7$var$Data(node).left = node.offsetLeft;
+            $e677edec019ae1f7$var$Data(node).width = node.offsetWidth;
+            $e677edec019ae1f7$var$Data(node).height = lineHeight || (lineHeight = node.offsetHeight);
+        }
+    }); // END LOOP
+    // Remove the element from the DOM
+    if (parent) parent.removeChild(element);
+    /**------------------------------------------------
+   ** SPLIT LINES
+   **-----------------------------------------------*/ if (types.lines) {
+        // Let splitText be a new document createFragment to hold the HTML
+        // structure.
+        splitText = $e677edec019ae1f7$var$createFragment(); // Iterate over lines of text (see 11 b)
+        // Let `line` be the array of words in the current line.
+        // Return an array of the wrapped line elements (lineElements)
+        lines = wordsInEachLine.map(function(wordsInThisLine) {
+            // Create an element to wrap the current line.
+            var lineElement = $e677edec019ae1f7$var$createElement(TAG_NAME, {
+                class: "".concat(settings.splitClass, " ").concat(settings.lineClass),
+                style: "display: block; text-align: ".concat(align, "; width: 100%;")
+            }); // Append the `lineElement` to `SplitText`
+            splitText.appendChild(lineElement); // Store size/position values for the line element.
+            if (isAbsolute) {
+                $e677edec019ae1f7$var$Data(lineElement).type = "line"; // the offset top of the first word in the line
+                $e677edec019ae1f7$var$Data(lineElement).top = $e677edec019ae1f7$var$Data(wordsInThisLine[0]).top;
+                $e677edec019ae1f7$var$Data(lineElement).height = lineHeight;
+            } // Iterate over the word elements in the current line.
+            $e677edec019ae1f7$var$forEach(wordsInThisLine, function(wordElement, idx, arr) {
+                if (types.words) // | If we are splitting text into words,
+                // | just append each wordElement to the lineElement.
+                lineElement.appendChild(wordElement);
+                else if (types.chars) // | If splitting text into characters but not words...
+                // | Append the character elements directly to the line element
+                $e677edec019ae1f7$var$forEach(wordElement.children, function(charNode) {
+                    lineElement.appendChild(charNode);
+                });
+                else // | If NOT splitting into words OR characters...
+                // | append the plain text content of the word to the line element
+                lineElement.appendChild($e677edec019ae1f7$var$createTextNode(wordElement.textContent));
+                 // Add a space after the word
+                if (idx !== arr.length - 1) lineElement.appendChild($e677edec019ae1f7$var$createTextNode(" "));
+            }); // END LOOP
+            return lineElement;
+        }); // END LOOP
+        // 10. Insert the new splitText
+        element.replaceChild(splitText, element.firstChild);
+    }
+    /**------------------------------------------------
+   **  SET ABSOLUTE POSITION
+   **-----------------------------------------------*/ // Apply absolute positioning to all split text elements (lines, words, and
+    // characters). The size and relative position of split nodes has already
+    // been recorded. Now we use those values to set each element to absolute
+    // position. However, positions were logged before text was split into lines
+    // (step 13 - 15). So some values need to be recalculated to account for the
+    // modified DOM structure.
+    if (isAbsolute) {
+        // Set the width/height of the parent element, so it does not collapse
+        // when its child nodes are set to absolute position.
+        element.style.width = "".concat(element.style.width || elementWidth, "px");
+        element.style.height = "".concat(elementHeight, "px"); // Iterate over all split nodes.
+        $e677edec019ae1f7$var$forEach(nodes, function(node) {
+            var isLineNode = $e677edec019ae1f7$var$Data(node).type === "line";
+            var isChildOfLineNode = !isLineNode && $e677edec019ae1f7$var$Data(node.parentElement).type === "line"; // Set the top position of the current node.
+            // -> If its a line node, we use the top offset of its first child
+            // -> If its the child of line node, then its top offset is zero
+            node.style.top = "".concat(isChildOfLineNode ? 0 : $e677edec019ae1f7$var$Data(node).top, "px"); // Set the left position of the current node.
+            // -> If its a line node, this this is equal to the left offset of
+            //    contentBox.
+            // -> If its the child of a line node, the cached valued must be
+            //    recalculated so its relative to the line node (which didn't
+            //    exist when value was initially checked). NOTE: the value is
+            //    recalculated without querying the DOM again
+            node.style.left = isLineNode ? "".concat(contentBox.left, "px") : "".concat($e677edec019ae1f7$var$Data(node).left - (isChildOfLineNode ? contentBox.left : 0), "px"); // Set the height of the current node to the cached value.
+            node.style.height = "".concat($e677edec019ae1f7$var$Data(node).height, "px"); //  Set the width of the current node.
+            //  If its a line element, width is equal to the width of the contentBox.
+            node.style.width = isLineNode ? "".concat(contentBox.width, "px") : "".concat($e677edec019ae1f7$var$Data(node).width, "px"); // Finally, set the node's position to absolute.
+            node.style.position = "absolute";
+        });
+    } // end if;
+    // 14. Re-attach the element to the DOM
+    if (parent) {
+        if (nextSibling) parent.insertBefore(element, nextSibling);
+        else parent.appendChild(element);
+    }
+    return {
+        lines: lines,
+        words: types.words ? words : [],
+        chars: chars
+    };
+}
+var $e677edec019ae1f7$var$_defaults = $e677edec019ae1f7$var$extend($e677edec019ae1f7$var$defaults, {});
+var $e677edec019ae1f7$var$SplitType = /*#__PURE__*/ function() {
+    $e677edec019ae1f7$var$_createClass(SplitType, null, [
+        {
+            key: "defaults",
+            /**
+     * The default settings for all splitType instances
+     */ get: function get() {
+                return $e677edec019ae1f7$var$_defaults;
+            },
+            set: function set(options) {
+                $e677edec019ae1f7$var$_defaults = $e677edec019ae1f7$var$extend($e677edec019ae1f7$var$_defaults, $e677edec019ae1f7$var$parseSettings(options));
+            }
+        }
+    ]);
+    function SplitType(target, options) {
+        $e677edec019ae1f7$var$_classCallCheck(this, SplitType);
+        this.isSplit = false;
+        this.settings = $e677edec019ae1f7$var$extend($e677edec019ae1f7$var$_defaults, $e677edec019ae1f7$var$parseSettings(options));
+        this.elements = $e677edec019ae1f7$var$getTargetElements(target) || [];
+        if (this.elements.length) {
+            // Store the original HTML content of each target element
+            this.originals = this.elements.map(function(element) {
+                return $e677edec019ae1f7$var$Data(element, "html", $e677edec019ae1f7$var$Data(element).html || element.innerHTML);
+            });
+            if (this.settings.types) // Initiate the split operation.
+            this.split();
+        }
+    }
+    /**
+   * Splits the text in all target elements. This method is called
+   * automatically when a new SplitType instance is created. It can also be
+   * called manually to re-split text with new options.
+   * @param {Object} options
+   * @public
+   */ $e677edec019ae1f7$var$_createClass(SplitType, [
+        {
+            key: "split",
+            value: function split(options) {
+                var _this = this;
+                // If any of the target elements have already been split,
+                // revert them back to their original content before splitting them.
+                this.revert(); // Create arrays to hold the split lines, words, and characters
+                this.lines = [];
+                this.words = [];
+                this.chars = []; // cache vertical scroll position before splitting
+                var scrollPos = [
+                    window.pageXOffset,
+                    window.pageYOffset
+                ]; // If new options were passed into the `split()` method, update settings
+                if (options !== undefined) this.settings = $e677edec019ae1f7$var$extend(this.settings, $e677edec019ae1f7$var$parseSettings(options));
+                 // Split text in each target element
+                this.elements.forEach(function(element) {
+                    // Add the split text nodes from this element to the arrays of all split
+                    // text nodes for this instance.
+                    var _split2 = $e677edec019ae1f7$var$splitSingleElement(element, _this.settings), lines = _split2.lines, words = _split2.words, chars = _split2.chars;
+                    _this.lines = _this.lines.concat(lines);
+                    _this.words = _this.words.concat(words);
+                    _this.chars = _this.chars.concat(chars);
+                    $e677edec019ae1f7$var$Data(element).isSplit = true;
+                }); // Set isSplit to true for the SplitType instance
+                this.isSplit = true; // Set scroll position to cached value.
+                window.scrollTo(scrollPos[0], scrollPos[1]); // Clear data Cache
+                this.elements.forEach(function(element) {
+                    var nodes = $e677edec019ae1f7$var$Data(element).nodes || [];
+                    $e677edec019ae1f7$var$toArray(nodes).forEach($e677edec019ae1f7$var$RemoveData);
+                });
+            }
+        },
+        {
+            key: "revert",
+            value: function revert() {
+                var _this2 = this;
+                // Delete the arrays of split text elements
+                if (this.isSplit) {
+                    this.lines = null;
+                    this.words = null;
+                    this.chars = null;
+                } // Remove split text from target elements and restore original content
+                this.elements.forEach(function(element) {
+                    if ($e677edec019ae1f7$var$Data(element).isSplit && $e677edec019ae1f7$var$Data(element).html) {
+                        element.innerHTML = $e677edec019ae1f7$var$Data(element).html;
+                        element.style.height = $e677edec019ae1f7$var$Data(element).cssHeight || "";
+                        element.style.width = $e677edec019ae1f7$var$Data(element).cssWidth || "";
+                        _this2.isSplit = false;
+                    }
+                });
+            }
+        }
+    ]);
+    return SplitType;
+}();
+var $e677edec019ae1f7$export$2e2bcd8739ae039 = $e677edec019ae1f7$var$SplitType;
+
+
+const $9d00bec76b14e914$export$db69c10dea599f = {
+    duration: 1.4,
+    ease: "power4"
+};
+
+
+
+
+class $400472c332900f01$export$8d6dee1bc13078fb {
+    /**
+     * Animates the lines in.
+     * @return {GSAP Timeline} the animation timeline
+     * @param {Boolean} animation - with or without animation.
+     */ in(animation = true) {
+        // Lines are visible
+        this.isVisible = true;
+        (0, $f5d6dc3e2355e925$export$99ee26438460406a).killTweensOf(this.SplitTypeInstance.lines);
+        this.inTimeline = (0, $f5d6dc3e2355e925$export$99ee26438460406a).timeline({
+            defaults: (0, $9d00bec76b14e914$export$db69c10dea599f)
+        }).addLabel("start", 0).set(this.SplitTypeInstance.lines, {
+            yPercent: 105
+        }, "start");
+        if (animation) this.inTimeline.to(this.SplitTypeInstance.lines, {
+            yPercent: 0,
+            stagger: 0.04
+        }, "start");
+        else this.inTimeline.set(this.SplitTypeInstance.lines, {
+            yPercent: 0
+        }, "start");
+        return this.inTimeline;
+    }
+    /**
+     * Animates the lines out.
+     * @param {Boolean} animation - with or without animation.
+     * @return {GSAP Timeline} the animation timeline
+     */ out(animation = true) {
+        // Lines are invisible
+        this.isVisible = false;
+        (0, $f5d6dc3e2355e925$export$99ee26438460406a).killTweensOf(this.SplitTypeInstance.lines);
+        this.outTimeline = (0, $f5d6dc3e2355e925$export$99ee26438460406a).timeline({
+            defaults: (0, $9d00bec76b14e914$export$db69c10dea599f)
+        }).addLabel("start", 0);
+        if (animation) this.outTimeline.to(this.SplitTypeInstance.lines, {
+            yPercent: -105,
+            stagger: 0.04
+        }, "start");
+        else this.outTimeline.set(this.SplitTypeInstance.lines, {
+            yPercent: -105
+        }, "start");
+        return this.outTimeline;
+    }
+    /**
+     * Initializes some events.
+     */ initEvents() {
+        // Re-initialize the Split Text on window resize.
+        window.addEventListener("resize", ()=>{
+            // Re-split text
+            // https://github.com/lukePeavey/SplitType#instancesplitoptions-void
+            this.SplitTypeInstance.split();
+            // Need to wrap again the new lines elements (div with class .oh)
+            (0, $8735ef69aff6d3c8$export$fec9ba7939aa9b65)(this.SplitTypeInstance.lines, "div", "oh");
+            // Hide the lines
+            if (!this.isVisible) (0, $f5d6dc3e2355e925$export$99ee26438460406a).set(this.SplitTypeInstance.lines, {
+                yPercent: 105
+            });
+        });
+    }
+    /**
+     * Constructor.
+     * @param {Element} DOM_el - a text DOM element
+     */ constructor(DOM_el){
+        // DOM elements
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "DOM", {
+            // main element (a text DOM element)
+            el: null
+        });
+        // Split Type instance
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "SplitTypeInstance", void 0);
+        // Checks if the Split Type lines are visible or not
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "isVisible", void 0);
+        // Animation timelines
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "inTimeline", void 0);
+        (0, $3ea9bbd6f8ebed33$export$2e2bcd8739ae039)(this, "outTimeline", void 0);
+        this.DOM = {
+            el: DOM_el
+        };
+        this.SplitTypeInstance = new (0, $e677edec019ae1f7$export$2e2bcd8739ae039)(this.DOM.el, {
+            types: "lines"
+        });
+        // Wrap the lines (div with class .oh)
+        // The inner child will be the one animating the transform
+        (0, $8735ef69aff6d3c8$export$fec9ba7939aa9b65)(this.SplitTypeInstance.lines, "div", "oh");
+        this.initEvents();
+    }
+}
+
+
+
+
+/*!
+ * matrix 3.11.2
+ * https://greensock.com
+ *
+ * Copyright 2008-2022, GreenSock. All rights reserved.
+ * Subject to the terms at https://greensock.com/standard-license or for
+ * Club GreenSock members, the agreement issued with that membership.
+ * @author: Jack Doyle, jack@greensock.com
+*/ /* eslint-disable */ var $ee81c47409f69c0e$var$_doc, $ee81c47409f69c0e$var$_win, $ee81c47409f69c0e$var$_docElement, $ee81c47409f69c0e$var$_body, $ee81c47409f69c0e$var$_divContainer, $ee81c47409f69c0e$var$_svgContainer, $ee81c47409f69c0e$var$_identityMatrix, $ee81c47409f69c0e$var$_gEl, $ee81c47409f69c0e$var$_transformProp = "transform", $ee81c47409f69c0e$var$_transformOriginProp = $ee81c47409f69c0e$var$_transformProp + "Origin", $ee81c47409f69c0e$var$_hasOffsetBug, $ee81c47409f69c0e$export$33c547c3e20d49b1 = function _setDoc(element) {
+    var doc = element.ownerDocument || element;
+    if (!($ee81c47409f69c0e$var$_transformProp in element.style) && "msTransform" in element.style) {
+        //to improve compatibility with old Microsoft browsers
+        $ee81c47409f69c0e$var$_transformProp = "msTransform";
+        $ee81c47409f69c0e$var$_transformOriginProp = $ee81c47409f69c0e$var$_transformProp + "Origin";
+    }
+    while(doc.parentNode && (doc = doc.parentNode));
+    $ee81c47409f69c0e$var$_win = window;
+    $ee81c47409f69c0e$var$_identityMatrix = new $ee81c47409f69c0e$export$26e6ecd136a15474();
+    if (doc) {
+        $ee81c47409f69c0e$var$_doc = doc;
+        $ee81c47409f69c0e$var$_docElement = doc.documentElement;
+        $ee81c47409f69c0e$var$_body = doc.body;
+        $ee81c47409f69c0e$var$_gEl = $ee81c47409f69c0e$var$_doc.createElementNS("http://www.w3.org/2000/svg", "g"); // prevent any existing CSS from transforming it
+        $ee81c47409f69c0e$var$_gEl.style.transform = "none"; // now test for the offset reporting bug. Use feature detection instead of browser sniffing to make things more bulletproof and future-proof. Hopefully Safari will fix their bug soon but it's 2020 and it's still not fixed.
+        var d1 = doc.createElement("div"), d2 = doc.createElement("div");
+        $ee81c47409f69c0e$var$_body.appendChild(d1);
+        d1.appendChild(d2);
+        d1.style.position = "static";
+        d1.style[$ee81c47409f69c0e$var$_transformProp] = "translate3d(0,0,1px)";
+        $ee81c47409f69c0e$var$_hasOffsetBug = d2.offsetParent !== d1;
+        $ee81c47409f69c0e$var$_body.removeChild(d1);
+    }
+    return doc;
+}, $ee81c47409f69c0e$var$_forceNonZeroScale = function _forceNonZeroScale(e) {
+    // walks up the element's ancestors and finds any that had their scale set to 0 via GSAP, and changes them to 0.0001 to ensure that measurements work. Firefox has a bug that causes it to incorrectly report getBoundingClientRect() when scale is 0.
+    var a, cache;
+    while(e && e !== $ee81c47409f69c0e$var$_body){
+        cache = e._gsap;
+        cache && cache.uncache && cache.get(e, "x"); // force re-parsing of transforms if necessary
+        if (cache && !cache.scaleX && !cache.scaleY && cache.renderTransform) {
+            cache.scaleX = cache.scaleY = 1e-4;
+            cache.renderTransform(1, cache);
+            a ? a.push(cache) : a = [
+                cache
+            ];
+        }
+        e = e.parentNode;
+    }
+    return a;
+}, // possible future addition: pass an element to _forceDisplay() and it'll walk up all its ancestors and make sure anything with display: none is set to display: block, and if there's no parentNode, it'll add it to the body. It returns an Array that you can then feed to _revertDisplay() to have it revert all the changes it made.
+// _forceDisplay = e => {
+// 	let a = [],
+// 		parent;
+// 	while (e && e !== _body) {
+// 		parent = e.parentNode;
+// 		(_win.getComputedStyle(e).display === "none" || !parent) && a.push(e, e.style.display, parent) && (e.style.display = "block");
+// 		parent || _body.appendChild(e);
+// 		e = parent;
+// 	}
+// 	return a;
+// },
+// _revertDisplay = a => {
+// 	for (let i = 0; i < a.length; i+=3) {
+// 		a[i+1] ? (a[i].style.display = a[i+1]) : a[i].style.removeProperty("display");
+// 		a[i+2] || a[i].parentNode.removeChild(a[i]);
+// 	}
+// },
+$ee81c47409f69c0e$var$_svgTemps = [], //we create 3 elements for SVG, and 3 for other DOM elements and cache them for performance reasons. They get nested in _divContainer and _svgContainer so that just one element is added to the DOM on each successive attempt. Again, performance is key.
+$ee81c47409f69c0e$var$_divTemps = [], $ee81c47409f69c0e$export$ffd2ae2432b6e61c = function _getDocScrollTop() {
+    return $ee81c47409f69c0e$var$_win.pageYOffset || $ee81c47409f69c0e$var$_doc.scrollTop || $ee81c47409f69c0e$var$_docElement.scrollTop || $ee81c47409f69c0e$var$_body.scrollTop || 0;
+}, $ee81c47409f69c0e$export$cf8963d945186253 = function _getDocScrollLeft() {
+    return $ee81c47409f69c0e$var$_win.pageXOffset || $ee81c47409f69c0e$var$_doc.scrollLeft || $ee81c47409f69c0e$var$_docElement.scrollLeft || $ee81c47409f69c0e$var$_body.scrollLeft || 0;
+}, $ee81c47409f69c0e$var$_svgOwner = function _svgOwner(element) {
+    return element.ownerSVGElement || ((element.tagName + "").toLowerCase() === "svg" ? element : null);
+}, $ee81c47409f69c0e$export$72052b0a226e838 = function _isFixed(element) {
+    if ($ee81c47409f69c0e$var$_win.getComputedStyle(element).position === "fixed") return true;
+    element = element.parentNode;
+    if (element && element.nodeType === 1) // avoid document fragments which will throw an error.
+    return _isFixed(element);
+}, $ee81c47409f69c0e$var$_createSibling = function _createSibling(element, i) {
+    if (element.parentNode && ($ee81c47409f69c0e$var$_doc || $ee81c47409f69c0e$export$33c547c3e20d49b1(element))) {
+        var svg = $ee81c47409f69c0e$var$_svgOwner(element), ns = svg ? svg.getAttribute("xmlns") || "http://www.w3.org/2000/svg" : "http://www.w3.org/1999/xhtml", type = svg ? i ? "rect" : "g" : "div", x = i !== 2 ? 0 : 100, y = i === 3 ? 100 : 0, css = "position:absolute;display:block;pointer-events:none;margin:0;padding:0;", e = $ee81c47409f69c0e$var$_doc.createElementNS ? $ee81c47409f69c0e$var$_doc.createElementNS(ns.replace(/^https/, "http"), type) : $ee81c47409f69c0e$var$_doc.createElement(type);
+        if (i) {
+            if (!svg) {
+                if (!$ee81c47409f69c0e$var$_divContainer) {
+                    $ee81c47409f69c0e$var$_divContainer = _createSibling(element);
+                    $ee81c47409f69c0e$var$_divContainer.style.cssText = css;
+                }
+                e.style.cssText = css + "width:0.1px;height:0.1px;top:" + y + "px;left:" + x + "px";
+                $ee81c47409f69c0e$var$_divContainer.appendChild(e);
+            } else {
+                $ee81c47409f69c0e$var$_svgContainer || ($ee81c47409f69c0e$var$_svgContainer = _createSibling(element));
+                e.setAttribute("width", 0.01);
+                e.setAttribute("height", 0.01);
+                e.setAttribute("transform", "translate(" + x + "," + y + ")");
+                $ee81c47409f69c0e$var$_svgContainer.appendChild(e);
+            }
+        }
+        return e;
+    }
+    throw "Need document and parent.";
+}, $ee81c47409f69c0e$var$_consolidate = function _consolidate(m) {
+    // replaces SVGTransformList.consolidate() because a bug in Firefox causes it to break pointer events. See https://greensock.com/forums/topic/23248-touch-is-not-working-on-draggable-in-firefox-windows-v324/?tab=comments#comment-109800
+    var c = new $ee81c47409f69c0e$export$26e6ecd136a15474(), i = 0;
+    for(; i < m.numberOfItems; i++)c.multiply(m.getItem(i).matrix);
+    return c;
+}, $ee81c47409f69c0e$export$a2b87f76ca5ccbd0 = function _getCTM(svg) {
+    var m = svg.getCTM(), transform;
+    if (!m) {
+        // Firefox returns null for getCTM() on root <svg> elements, so this is a workaround using a <g> that we temporarily append.
+        transform = svg.style[$ee81c47409f69c0e$var$_transformProp];
+        svg.style[$ee81c47409f69c0e$var$_transformProp] = "none"; // a bug in Firefox causes css transforms to contaminate the getCTM()
+        svg.appendChild($ee81c47409f69c0e$var$_gEl);
+        m = $ee81c47409f69c0e$var$_gEl.getCTM();
+        svg.removeChild($ee81c47409f69c0e$var$_gEl);
+        transform ? svg.style[$ee81c47409f69c0e$var$_transformProp] = transform : svg.style.removeProperty($ee81c47409f69c0e$var$_transformProp.replace(/([A-Z])/g, "-$1").toLowerCase());
+    }
+    return m || $ee81c47409f69c0e$var$_identityMatrix.clone(); // Firefox will still return null if the <svg> has a width/height of 0 in the browser.
+}, $ee81c47409f69c0e$var$_placeSiblings = function _placeSiblings(element, adjustGOffset) {
+    var svg = $ee81c47409f69c0e$var$_svgOwner(element), isRootSVG = element === svg, siblings = svg ? $ee81c47409f69c0e$var$_svgTemps : $ee81c47409f69c0e$var$_divTemps, parent = element.parentNode, container, m, b, x, y, cs;
+    if (element === $ee81c47409f69c0e$var$_win) return element;
+    siblings.length || siblings.push($ee81c47409f69c0e$var$_createSibling(element, 1), $ee81c47409f69c0e$var$_createSibling(element, 2), $ee81c47409f69c0e$var$_createSibling(element, 3));
+    container = svg ? $ee81c47409f69c0e$var$_svgContainer : $ee81c47409f69c0e$var$_divContainer;
+    if (svg) {
+        if (isRootSVG) {
+            b = $ee81c47409f69c0e$export$a2b87f76ca5ccbd0(element);
+            x = -b.e / b.a;
+            y = -b.f / b.d;
+            m = $ee81c47409f69c0e$var$_identityMatrix;
+        } else if (element.getBBox) {
+            b = element.getBBox();
+            m = element.transform ? element.transform.baseVal : {}; // IE11 doesn't follow the spec.
+            m = !m.numberOfItems ? $ee81c47409f69c0e$var$_identityMatrix : m.numberOfItems > 1 ? $ee81c47409f69c0e$var$_consolidate(m) : m.getItem(0).matrix; // don't call m.consolidate().matrix because a bug in Firefox makes pointer events not work when consolidate() is called on the same tick as getBoundingClientRect()! See https://greensock.com/forums/topic/23248-touch-is-not-working-on-draggable-in-firefox-windows-v324/?tab=comments#comment-109800
+            x = m.a * b.x + m.c * b.y;
+            y = m.b * b.x + m.d * b.y;
+        } else {
+            // may be a <mask> which has no getBBox() so just use defaults instead of throwing errors.
+            m = new $ee81c47409f69c0e$export$26e6ecd136a15474();
+            x = y = 0;
+        }
+        if (adjustGOffset && element.tagName.toLowerCase() === "g") x = y = 0;
+        (isRootSVG ? svg : parent).appendChild(container);
+        container.setAttribute("transform", "matrix(" + m.a + "," + m.b + "," + m.c + "," + m.d + "," + (m.e + x) + "," + (m.f + y) + ")");
+    } else {
+        x = y = 0;
+        if ($ee81c47409f69c0e$var$_hasOffsetBug) {
+            // some browsers (like Safari) have a bug that causes them to misreport offset values. When an ancestor element has a transform applied, it's supposed to treat it as if it's position: relative (new context). Safari botches this, so we need to find the closest ancestor (between the element and its offsetParent) that has a transform applied and if one is found, grab its offsetTop/Left and subtract them to compensate.
+            m = element.offsetParent;
+            b = element;
+            while(b && (b = b.parentNode) && b !== m && b.parentNode)if (($ee81c47409f69c0e$var$_win.getComputedStyle(b)[$ee81c47409f69c0e$var$_transformProp] + "").length > 4) {
+                x = b.offsetLeft;
+                y = b.offsetTop;
+                b = 0;
+            }
+        }
+        cs = $ee81c47409f69c0e$var$_win.getComputedStyle(element);
+        if (cs.position !== "absolute" && cs.position !== "fixed") {
+            m = element.offsetParent;
+            while(parent && parent !== m){
+                // if there's an ancestor element between the element and its offsetParent that's scrolled, we must factor that in.
+                x += parent.scrollLeft || 0;
+                y += parent.scrollTop || 0;
+                parent = parent.parentNode;
+            }
+        }
+        b = container.style;
+        b.top = element.offsetTop - y + "px";
+        b.left = element.offsetLeft - x + "px";
+        b[$ee81c47409f69c0e$var$_transformProp] = cs[$ee81c47409f69c0e$var$_transformProp];
+        b[$ee81c47409f69c0e$var$_transformOriginProp] = cs[$ee81c47409f69c0e$var$_transformOriginProp]; // b.border = m.border;
+        // b.borderLeftStyle = m.borderLeftStyle;
+        // b.borderTopStyle = m.borderTopStyle;
+        // b.borderLeftWidth = m.borderLeftWidth;
+        // b.borderTopWidth = m.borderTopWidth;
+        b.position = cs.position === "fixed" ? "fixed" : "absolute";
+        element.parentNode.appendChild(container);
+    }
+    return container;
+}, $ee81c47409f69c0e$var$_setMatrix = function _setMatrix(m, a, b, c, d, e, f) {
+    m.a = a;
+    m.b = b;
+    m.c = c;
+    m.d = d;
+    m.e = e;
+    m.f = f;
+    return m;
+};
+var $ee81c47409f69c0e$export$26e6ecd136a15474 = /*#__PURE__*/ function() {
+    function Matrix2D(a, b, c, d, e, f) {
+        if (a === void 0) a = 1;
+        if (b === void 0) b = 0;
+        if (c === void 0) c = 0;
+        if (d === void 0) d = 1;
+        if (e === void 0) e = 0;
+        if (f === void 0) f = 0;
+        $ee81c47409f69c0e$var$_setMatrix(this, a, b, c, d, e, f);
+    }
+    var _proto = Matrix2D.prototype;
+    _proto.inverse = function inverse() {
+        var a = this.a, b = this.b, c = this.c, d = this.d, e = this.e, f = this.f, determinant = a * d - b * c || 1e-10;
+        return $ee81c47409f69c0e$var$_setMatrix(this, d / determinant, -b / determinant, -c / determinant, a / determinant, (c * f - d * e) / determinant, -(a * f - b * e) / determinant);
+    };
+    _proto.multiply = function multiply(matrix) {
+        var a = this.a, b = this.b, c = this.c, d = this.d, e = this.e, f = this.f, a2 = matrix.a, b2 = matrix.c, c2 = matrix.b, d2 = matrix.d, e2 = matrix.e, f2 = matrix.f;
+        return $ee81c47409f69c0e$var$_setMatrix(this, a2 * a + c2 * c, a2 * b + c2 * d, b2 * a + d2 * c, b2 * b + d2 * d, e + e2 * a + f2 * c, f + e2 * b + f2 * d);
+    };
+    _proto.clone = function clone() {
+        return new Matrix2D(this.a, this.b, this.c, this.d, this.e, this.f);
+    };
+    _proto.equals = function equals(matrix) {
+        var a = this.a, b = this.b, c = this.c, d = this.d, e = this.e, f = this.f;
+        return a === matrix.a && b === matrix.b && c === matrix.c && d === matrix.d && e === matrix.e && f === matrix.f;
+    };
+    _proto.apply = function apply(point, decoratee) {
+        if (decoratee === void 0) decoratee = {};
+        var x = point.x, y = point.y, a = this.a, b = this.b, c = this.c, d = this.d, e = this.e, f = this.f;
+        decoratee.x = x * a + y * c + e || 0;
+        decoratee.y = x * b + y * d + f || 0;
+        return decoratee;
+    };
+    return Matrix2D;
+}(); // Feed in an element and it'll return a 2D matrix (optionally inverted) so that you can translate between coordinate spaces.
+function $ee81c47409f69c0e$export$91a495f99cf781b7(element, inverse, adjustGOffset, includeScrollInFixed) {
+    // adjustGOffset is typically used only when grabbing an element's PARENT's global matrix, and it ignores the x/y offset of any SVG <g> elements because they behave in a special way.
+    if (!element || !element.parentNode || ($ee81c47409f69c0e$var$_doc || $ee81c47409f69c0e$export$33c547c3e20d49b1(element)).documentElement === element) return new $ee81c47409f69c0e$export$26e6ecd136a15474();
+    var zeroScales = $ee81c47409f69c0e$var$_forceNonZeroScale(element), svg = $ee81c47409f69c0e$var$_svgOwner(element), temps = svg ? $ee81c47409f69c0e$var$_svgTemps : $ee81c47409f69c0e$var$_divTemps, container = $ee81c47409f69c0e$var$_placeSiblings(element, adjustGOffset), b1 = temps[0].getBoundingClientRect(), b2 = temps[1].getBoundingClientRect(), b3 = temps[2].getBoundingClientRect(), parent = container.parentNode, isFixed = !includeScrollInFixed && $ee81c47409f69c0e$export$72052b0a226e838(element), m = new $ee81c47409f69c0e$export$26e6ecd136a15474((b2.left - b1.left) / 100, (b2.top - b1.top) / 100, (b3.left - b1.left) / 100, (b3.top - b1.top) / 100, b1.left + (isFixed ? 0 : $ee81c47409f69c0e$export$cf8963d945186253()), b1.top + (isFixed ? 0 : $ee81c47409f69c0e$export$ffd2ae2432b6e61c()));
+    parent.removeChild(container);
+    if (zeroScales) {
+        b1 = zeroScales.length;
+        while(b1--){
+            b2 = zeroScales[b1];
+            b2.scaleX = b2.scaleY = 0;
+            b2.renderTransform(1, b2);
+        }
+    }
+    return inverse ? m.inverse() : m;
+}
+
+
+var $9c015c045583207a$var$_id = 1, $9c015c045583207a$var$_toArray, $9c015c045583207a$var$gsap, $9c015c045583207a$var$_batch, $9c015c045583207a$var$_batchAction, $9c015c045583207a$var$_body, $9c015c045583207a$var$_closestTenth, $9c015c045583207a$var$_forEachBatch = function _forEachBatch(batch, name) {
+    return batch.actions.forEach(function(a) {
+        return a.vars[name] && a.vars[name](a);
+    });
+}, $9c015c045583207a$var$_batchLookup = {}, $9c015c045583207a$var$_RAD2DEG = 180 / Math.PI, $9c015c045583207a$var$_DEG2RAD = Math.PI / 180, $9c015c045583207a$var$_emptyObj = {}, $9c015c045583207a$var$_dashedNameLookup = {}, $9c015c045583207a$var$_memoizedRemoveProps = {}, $9c015c045583207a$var$_listToArray = function _listToArray(list) {
+    return typeof list === "string" ? list.split(" ").join("").split(",") : list;
+}, // removes extra spaces contaminating the names, returns an Array.
+$9c015c045583207a$var$_callbacks = $9c015c045583207a$var$_listToArray("onStart,onUpdate,onComplete,onReverseComplete,onInterrupt"), $9c015c045583207a$var$_removeProps = $9c015c045583207a$var$_listToArray("transform,transformOrigin,width,height,position,top,left,opacity,zIndex,maxWidth,maxHeight,minWidth,minHeight"), $9c015c045583207a$var$_getEl = function _getEl(target) {
+    return $9c015c045583207a$var$_toArray(target)[0] || console.warn("Element not found:", target);
+}, $9c015c045583207a$var$_round = function _round(value) {
+    return Math.round(value * 10000) / 10000 || 0;
+}, $9c015c045583207a$var$_toggleClass = function _toggleClass(targets, className, action) {
+    return targets.forEach(function(el) {
+        return el.classList[action](className);
+    });
+}, $9c015c045583207a$var$_reserved = {
+    zIndex: 1,
+    kill: 1,
+    simple: 1,
+    spin: 1,
+    clearProps: 1,
+    targets: 1,
+    toggleClass: 1,
+    onComplete: 1,
+    onUpdate: 1,
+    onInterrupt: 1,
+    onStart: 1,
+    delay: 1,
+    repeat: 1,
+    repeatDelay: 1,
+    yoyo: 1,
+    scale: 1,
+    fade: 1,
+    absolute: 1,
+    props: 1,
+    onEnter: 1,
+    onLeave: 1,
+    custom: 1,
+    paused: 1,
+    nested: 1,
+    prune: 1,
+    absoluteOnLeave: 1
+}, $9c015c045583207a$var$_fitReserved = {
+    zIndex: 1,
+    simple: 1,
+    clearProps: 1,
+    scale: 1,
+    absolute: 1,
+    fitChild: 1,
+    getVars: 1,
+    props: 1
+}, $9c015c045583207a$var$_camelToDashed = function _camelToDashed(p) {
+    return p.replace(/([A-Z])/g, "-$1").toLowerCase();
+}, $9c015c045583207a$var$_copy = function _copy(obj, exclude) {
+    var result = {}, p;
+    for(p in obj)exclude[p] || (result[p] = obj[p]);
+    return result;
+}, $9c015c045583207a$var$_memoizedProps = {}, $9c015c045583207a$var$_memoizeProps = function _memoizeProps(props) {
+    var p = $9c015c045583207a$var$_memoizedProps[props] = $9c015c045583207a$var$_listToArray(props);
+    $9c015c045583207a$var$_memoizedRemoveProps[props] = p.concat($9c015c045583207a$var$_removeProps);
+    return p;
+}, $9c015c045583207a$var$_getInverseGlobalMatrix = function _getInverseGlobalMatrix(el) {
+    // integrates caching for improved performance
+    var cache = el._gsap || $9c015c045583207a$var$gsap.core.getCache(el);
+    if (cache.gmCache === $9c015c045583207a$var$gsap.ticker.frame) return cache.gMatrix;
+    cache.gmCache = $9c015c045583207a$var$gsap.ticker.frame;
+    return cache.gMatrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(el, true, false, true);
+}, $9c015c045583207a$var$_getDOMDepth = function _getDOMDepth(el, invert, level) {
+    if (level === void 0) level = 0;
+    // In invert is true, the sibling depth is increments of 1, and parent/nesting depth is increments of 1000. This lets us order elements in an Array to reflect document flow.
+    var parent = el.parentNode, inc = 1000 * Math.pow(10, level) * (invert ? -1 : 1), l = invert ? -inc * 900 : 0;
+    while(el){
+        l += inc;
+        el = el.previousSibling;
+    }
+    return parent ? l + _getDOMDepth(parent, invert, level + 1) : l;
+}, $9c015c045583207a$var$_orderByDOMDepth = function _orderByDOMDepth(comps, invert, isElStates) {
+    comps.forEach(function(comp) {
+        return comp.d = $9c015c045583207a$var$_getDOMDepth(isElStates ? comp.element : comp.t, invert);
+    });
+    comps.sort(function(c1, c2) {
+        return c1.d - c2.d;
+    });
+    return comps;
+}, $9c015c045583207a$var$_recordInlineStyles = function _recordInlineStyles(elState, props) {
+    // records the current inline CSS properties into an Array in alternating name/value pairs that's stored in a "css" property on the state object so that we can revert later.
+    var style = elState.element.style, a = elState.css = elState.css || [], i = props.length, p, v;
+    while(i--){
+        p = props[i];
+        v = style[p] || style.getPropertyValue(p);
+        a.push(v ? p : $9c015c045583207a$var$_dashedNameLookup[p] || ($9c015c045583207a$var$_dashedNameLookup[p] = $9c015c045583207a$var$_camelToDashed(p)), v);
+    }
+    return style;
+}, $9c015c045583207a$var$_applyInlineStyles = function _applyInlineStyles(state) {
+    var css = state.css, style = state.element.style, i = 0;
+    state.cache.uncache = 1;
+    for(; i < css.length; i += 2)css[i + 1] ? style[css[i]] = css[i + 1] : style.removeProperty(css[i]);
+}, $9c015c045583207a$var$_setFinalStates = function _setFinalStates(comps, onlyTransforms) {
+    comps.forEach(function(c) {
+        return c.a.cache.uncache = 1;
+    });
+    onlyTransforms || comps.finalStates.forEach($9c015c045583207a$var$_applyInlineStyles);
+}, $9c015c045583207a$var$_absoluteProps = "paddingTop,paddingRight,paddingBottom,paddingLeft,gridArea,transition".split(","), // properties that we must record just
+$9c015c045583207a$var$_makeAbsolute = function _makeAbsolute(elState, fallbackNode, ignoreBatch) {
+    var element = elState.element, width = elState.width, height = elState.height, uncache = elState.uncache, getProp = elState.getProp, style = element.style, i = 4, result, displayIsNone, cs;
+    typeof fallbackNode !== "object" && (fallbackNode = elState);
+    if ($9c015c045583207a$var$_batch && ignoreBatch !== 1) {
+        $9c015c045583207a$var$_batch._abs.push({
+            t: element,
+            b: elState,
+            a: elState,
+            sd: 0
+        });
+        $9c015c045583207a$var$_batch._final.push(function() {
+            return elState.cache.uncache = 1, $9c015c045583207a$var$_applyInlineStyles(elState);
+        });
+        return element;
+    }
+    displayIsNone = getProp("display") === "none";
+    if (!elState.isVisible || displayIsNone) {
+        displayIsNone && ($9c015c045583207a$var$_recordInlineStyles(elState, [
+            "display"
+        ]).display = fallbackNode.display);
+        elState.matrix = fallbackNode.matrix;
+        elState.width = width = elState.width || fallbackNode.width;
+        elState.height = height = elState.height || fallbackNode.height;
+    }
+    $9c015c045583207a$var$_recordInlineStyles(elState, $9c015c045583207a$var$_absoluteProps);
+    cs = window.getComputedStyle(element);
+    while(i--)style[$9c015c045583207a$var$_absoluteProps[i]] = cs[$9c015c045583207a$var$_absoluteProps[i]]; // record paddings as px-based because if removed from grid, percentage-based ones could be altered.
+    style.gridArea = "1 / 1 / 1 / 1";
+    style.transition = "none";
+    style.position = "absolute";
+    style.width = width + "px";
+    style.height = height + "px";
+    style.top || (style.top = "0px");
+    style.left || (style.left = "0px");
+    if (uncache) result = new $9c015c045583207a$var$ElementState(element);
+    else {
+        // better performance
+        result = $9c015c045583207a$var$_copy(elState, $9c015c045583207a$var$_emptyObj);
+        result.position = "absolute";
+        if (elState.simple) {
+            var bounds = element.getBoundingClientRect();
+            result.matrix = new (0, $ee81c47409f69c0e$export$26e6ecd136a15474)(1, 0, 0, 1, bounds.left + (0, $ee81c47409f69c0e$export$cf8963d945186253)(), bounds.top + (0, $ee81c47409f69c0e$export$ffd2ae2432b6e61c)());
+        } else result.matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(element, false, false, true);
+    }
+    result = $9c015c045583207a$var$_fit(result, elState, true);
+    elState.x = $9c015c045583207a$var$_closestTenth(result.x, 0.01);
+    elState.y = $9c015c045583207a$var$_closestTenth(result.y, 0.01);
+    return element;
+}, $9c015c045583207a$var$_filterComps = function _filterComps(comps, targets) {
+    if (targets !== true) {
+        targets = $9c015c045583207a$var$_toArray(targets);
+        comps = comps.filter(function(c) {
+            if (targets.indexOf((c.sd < 0 ? c.b : c.a).element) !== -1) return true;
+            else {
+                c.t._gsap.renderTransform(1); // we must force transforms to render on anything that isn't being made position: absolute, otherwise the absolute position happens and then when animation begins it applies transforms which can create a new stacking context, throwing off positioning!
+                if (c.b.isVisible) {
+                    c.t.style.width = c.b.width + "px"; // otherwise things can collapse when contents are made position: absolute.
+                    c.t.style.height = c.b.height + "px";
+                }
+            }
+        });
+    }
+    return comps;
+}, $9c015c045583207a$var$_makeCompsAbsolute = function _makeCompsAbsolute(comps) {
+    return $9c015c045583207a$var$_orderByDOMDepth(comps, true).forEach(function(c) {
+        return (c.a.isVisible || c.b.isVisible) && $9c015c045583207a$var$_makeAbsolute(c.sd < 0 ? c.b : c.a, c.b, 1);
+    });
+}, $9c015c045583207a$var$_findElStateInState = function _findElStateInState(state, other) {
+    return other && state.idLookup[$9c015c045583207a$var$_parseElementState(other).id] || state.elementStates[0];
+}, $9c015c045583207a$var$_parseElementState = function _parseElementState(elOrNode, props, simple, other) {
+    return elOrNode instanceof $9c015c045583207a$var$ElementState ? elOrNode : elOrNode instanceof $9c015c045583207a$var$FlipState ? $9c015c045583207a$var$_findElStateInState(elOrNode, other) : new $9c015c045583207a$var$ElementState(typeof elOrNode === "string" ? $9c015c045583207a$var$_getEl(elOrNode) || console.warn(elOrNode + " not found") : elOrNode, props, simple);
+}, $9c015c045583207a$var$_recordProps = function _recordProps(elState, props) {
+    var getProp = $9c015c045583207a$var$gsap.getProperty(elState.element, null, "native"), obj = elState.props = {}, i = props.length;
+    while(i--)obj[props[i]] = (getProp(props[i]) + "").trim();
+    obj.zIndex && (obj.zIndex = parseFloat(obj.zIndex) || 0);
+    return elState;
+}, $9c015c045583207a$var$_applyProps = function _applyProps(element, props) {
+    var style = element.style || element, // could pass in a vars object.
+    p;
+    for(p in props)style[p] = props[p];
+}, $9c015c045583207a$var$_getID = function _getID(el) {
+    var id = el.getAttribute("data-flip-id");
+    id || el.setAttribute("data-flip-id", id = "auto-" + $9c015c045583207a$var$_id++);
+    return id;
+}, $9c015c045583207a$var$_elementsFromElementStates = function _elementsFromElementStates(elStates) {
+    return elStates.map(function(elState) {
+        return elState.element;
+    });
+}, $9c015c045583207a$var$_handleCallback = function _handleCallback(callback, elStates, tl) {
+    return callback && elStates.length && tl.add(callback($9c015c045583207a$var$_elementsFromElementStates(elStates), tl, new $9c015c045583207a$var$FlipState(elStates, 0, true)), 0);
+}, $9c015c045583207a$var$_fit = function _fit(fromState, toState, scale, applyProps, fitChild, vars) {
+    var element = fromState.element, cache = fromState.cache, parent = fromState.parent, x = fromState.x, y = fromState.y, width = toState.width, height = toState.height, scaleX = toState.scaleX, scaleY = toState.scaleY, rotation = toState.rotation, bounds = toState.bounds, cssText = vars && element.style.cssText, transform = vars && element.getBBox && element.getAttribute("transform"), dimensionState = fromState, _toState$matrix = toState.matrix, e = _toState$matrix.e, f = _toState$matrix.f, deep = fromState.bounds.width !== bounds.width || fromState.bounds.height !== bounds.height || fromState.scaleX !== scaleX || fromState.scaleY !== scaleY || fromState.rotation !== rotation, simple = !deep && fromState.simple && toState.simple && !fitChild, skewX, fromPoint, toPoint, getProp, parentMatrix, matrix, bbox;
+    if (simple || !parent) {
+        scaleX = scaleY = 1;
+        rotation = skewX = 0;
+    } else {
+        parentMatrix = $9c015c045583207a$var$_getInverseGlobalMatrix(parent);
+        matrix = parentMatrix.clone().multiply(toState.ctm ? toState.matrix.clone().multiply(toState.ctm) : toState.matrix); // root SVG elements have a ctm that we must factor out (for example, viewBox:"0 0 94 94" with a width of 200px would scale the internals by 2.127 but when we're matching the size of the root <svg> element itself, that scaling shouldn't factor in!)
+        rotation = $9c015c045583207a$var$_round(Math.atan2(matrix.b, matrix.a) * $9c015c045583207a$var$_RAD2DEG);
+        skewX = $9c015c045583207a$var$_round(Math.atan2(matrix.c, matrix.d) * $9c015c045583207a$var$_RAD2DEG + rotation) % 360; // in very rare cases, minor rounding might end up with 360 which should be 0.
+        scaleX = Math.sqrt(Math.pow(matrix.a, 2) + Math.pow(matrix.b, 2));
+        scaleY = Math.sqrt(Math.pow(matrix.c, 2) + Math.pow(matrix.d, 2)) * Math.cos(skewX * $9c015c045583207a$var$_DEG2RAD);
+        if (fitChild) {
+            fitChild = $9c015c045583207a$var$_toArray(fitChild)[0];
+            getProp = $9c015c045583207a$var$gsap.getProperty(fitChild);
+            bbox = fitChild.getBBox && typeof fitChild.getBBox === "function" && fitChild.getBBox();
+            dimensionState = {
+                scaleX: getProp("scaleX"),
+                scaleY: getProp("scaleY"),
+                width: bbox ? bbox.width : Math.ceil(parseFloat(getProp("width", "px"))),
+                height: bbox ? bbox.height : parseFloat(getProp("height", "px"))
+            };
+        }
+        cache.rotation = rotation + "deg";
+        cache.skewX = skewX + "deg";
+    }
+    if (scale) {
+        scaleX *= width === dimensionState.width || !dimensionState.width ? 1 : width / dimensionState.width; // note if widths are both 0, we should make scaleX 1 - some elements have box-sizing that incorporates padding, etc. and we don't want it to collapse in that case.
+        scaleY *= height === dimensionState.height || !dimensionState.height ? 1 : height / dimensionState.height;
+        cache.scaleX = scaleX;
+        cache.scaleY = scaleY;
+    } else {
+        width = $9c015c045583207a$var$_closestTenth(width * scaleX / dimensionState.scaleX, 0);
+        height = $9c015c045583207a$var$_closestTenth(height * scaleY / dimensionState.scaleY, 0);
+        element.style.width = width + "px";
+        element.style.height = height + "px";
+    } // if (fromState.isFixed) { // commented out because it's now taken care of in getGlobalMatrix() with a flag at the end.
+    // 	e -= _getDocScrollLeft();
+    // 	f -= _getDocScrollTop();
+    // }
+    applyProps && $9c015c045583207a$var$_applyProps(element, toState.props);
+    if (simple || !parent) {
+        x += e - fromState.matrix.e;
+        y += f - fromState.matrix.f;
+    } else if (deep || parent !== toState.parent) {
+        cache.renderTransform(1, cache);
+        matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(fitChild || element, false, false, true);
+        fromPoint = parentMatrix.apply({
+            x: matrix.e,
+            y: matrix.f
+        });
+        toPoint = parentMatrix.apply({
+            x: e,
+            y: f
+        });
+        x += toPoint.x - fromPoint.x;
+        y += toPoint.y - fromPoint.y;
+    } else {
+        // use a faster/cheaper algorithm if we're just moving x/y
+        parentMatrix.e = parentMatrix.f = 0;
+        toPoint = parentMatrix.apply({
+            x: e - fromState.matrix.e,
+            y: f - fromState.matrix.f
+        });
+        x += toPoint.x;
+        y += toPoint.y;
+    }
+    x = $9c015c045583207a$var$_closestTenth(x, 0.02);
+    y = $9c015c045583207a$var$_closestTenth(y, 0.02);
+    if (vars && !(vars instanceof $9c015c045583207a$var$ElementState)) {
+        // revert
+        element.style.cssText = cssText;
+        element.getBBox && element.setAttribute("transform", transform || "");
+        cache.uncache = 1;
+    } else {
+        // or apply the transform immediately
+        cache.x = x + "px";
+        cache.y = y + "px";
+        cache.renderTransform(1, cache);
+    }
+    if (vars) {
+        vars.x = x;
+        vars.y = y;
+        vars.rotation = rotation;
+        vars.skewX = skewX;
+        if (scale) {
+            vars.scaleX = scaleX;
+            vars.scaleY = scaleY;
+        } else {
+            vars.width = width;
+            vars.height = height;
+        }
+    }
+    return vars || cache;
+}, $9c015c045583207a$var$_parseState = function _parseState(targetsOrState, vars) {
+    return targetsOrState instanceof $9c015c045583207a$var$FlipState ? targetsOrState : new $9c015c045583207a$var$FlipState(targetsOrState, vars);
+}, $9c015c045583207a$var$_getChangingElState = function _getChangingElState(toState, fromState, id) {
+    var to1 = toState.idLookup[id], to2 = toState.alt[id];
+    return to2.isVisible && (!(fromState.getElementState(to2.element) || to2).isVisible || !to1.isVisible) ? to2 : to1;
+}, $9c015c045583207a$var$_bodyMetrics = [], $9c015c045583207a$var$_bodyProps = "width,height,overflowX,overflowY".split(","), $9c015c045583207a$var$_bodyLocked, $9c015c045583207a$var$_lockBodyScroll = function _lockBodyScroll(lock) {
+    // if there's no scrollbar, we should lock that so that measurements don't get affected by temporary repositioning, like if something is centered in the window.
+    if (lock !== $9c015c045583207a$var$_bodyLocked) {
+        var s = $9c015c045583207a$var$_body.style, w = $9c015c045583207a$var$_body.clientWidth === window.outerWidth, h = $9c015c045583207a$var$_body.clientHeight === window.outerHeight, i = 4;
+        if (lock && (w || h)) {
+            while(i--)$9c015c045583207a$var$_bodyMetrics[i] = s[$9c015c045583207a$var$_bodyProps[i]];
+            if (w) {
+                s.width = $9c015c045583207a$var$_body.clientWidth + "px";
+                s.overflowY = "hidden";
+            }
+            if (h) {
+                s.height = $9c015c045583207a$var$_body.clientHeight + "px";
+                s.overflowX = "hidden";
+            }
+            $9c015c045583207a$var$_bodyLocked = lock;
+        } else if ($9c015c045583207a$var$_bodyLocked) {
+            while(i--)$9c015c045583207a$var$_bodyMetrics[i] ? s[$9c015c045583207a$var$_bodyProps[i]] = $9c015c045583207a$var$_bodyMetrics[i] : s.removeProperty($9c015c045583207a$var$_camelToDashed($9c015c045583207a$var$_bodyProps[i]));
+            $9c015c045583207a$var$_bodyLocked = lock;
+        }
+    }
+}, $9c015c045583207a$var$_fromTo = function _fromTo(fromState, toState, vars, relative) {
+    // relative is -1 if "from()", and 1 if "to()"
+    fromState instanceof $9c015c045583207a$var$FlipState && toState instanceof $9c015c045583207a$var$FlipState || console.warn("Not a valid state object.");
+    vars = vars || {};
+    var _vars = vars, clearProps = _vars.clearProps, onEnter = _vars.onEnter, onLeave = _vars.onLeave, absolute = _vars.absolute, absoluteOnLeave = _vars.absoluteOnLeave, custom = _vars.custom, delay = _vars.delay, paused = _vars.paused, repeat = _vars.repeat, repeatDelay = _vars.repeatDelay, yoyo = _vars.yoyo, toggleClass = _vars.toggleClass, nested = _vars.nested, _zIndex = _vars.zIndex, scale = _vars.scale, fade = _vars.fade, stagger = _vars.stagger, spin = _vars.spin, prune = _vars.prune, props = ("props" in vars ? vars : fromState).props, tweenVars = $9c015c045583207a$var$_copy(vars, $9c015c045583207a$var$_reserved), animation = $9c015c045583207a$var$gsap.timeline({
+        delay: delay,
+        paused: paused,
+        repeat: repeat,
+        repeatDelay: repeatDelay,
+        yoyo: yoyo,
+        data: "isFlip"
+    }), remainingProps = tweenVars, entering = [], leaving = [], comps = [], swapOutTargets = [], spinNum = spin === true ? 1 : spin || 0, spinFunc = typeof spin === "function" ? spin : function() {
+        return spinNum;
+    }, interrupted = fromState.interrupted || toState.interrupted, addFunc = animation[relative !== 1 ? "to" : "from"], v, p, endTime, i, el, comp, state, targets, finalStates, fromNode, toNode, run, a, b; //relative || (toState = (new FlipState(toState.targets, {props: props})).fit(toState, scale));
+    for(p in toState.idLookup){
+        toNode = !toState.alt[p] ? toState.idLookup[p] : $9c015c045583207a$var$_getChangingElState(toState, fromState, p);
+        el = toNode.element;
+        fromNode = fromState.idLookup[p];
+        fromState.alt[p] && el === fromNode.element && (fromState.alt[p].isVisible || !toNode.isVisible) && (fromNode = fromState.alt[p]);
+        if (fromNode) {
+            comp = {
+                t: el,
+                b: fromNode,
+                a: toNode,
+                sd: fromNode.element === el ? 0 : toNode.isVisible ? 1 : -1
+            };
+            comps.push(comp);
+            if (comp.sd) {
+                if (comp.sd < 0) {
+                    comp.b = toNode;
+                    comp.a = fromNode;
+                } // for swapping elements that got interrupted, we must re-record the inline styles to ensure they're not tainted. Remember, .batch() permits getState() not to force in-progress flips to their end state.
+                interrupted && $9c015c045583207a$var$_recordInlineStyles(comp.b, props ? $9c015c045583207a$var$_memoizedRemoveProps[props] : $9c015c045583207a$var$_removeProps);
+                fade && comps.push(comp.swap = {
+                    t: fromNode.element,
+                    b: comp.b,
+                    a: comp.a,
+                    sd: -comp.sd,
+                    swap: comp
+                });
+            }
+            el._flip = fromNode.element._flip = $9c015c045583207a$var$_batch ? $9c015c045583207a$var$_batch.timeline : animation;
+        } else if (toNode.isVisible) {
+            comps.push({
+                t: el,
+                b: $9c015c045583207a$var$_copy(toNode, {
+                    isVisible: 1
+                }),
+                a: toNode,
+                sd: 0,
+                entering: 1
+            }); // to include it in the "entering" Array and do absolute positioning if necessary
+            el._flip = $9c015c045583207a$var$_batch ? $9c015c045583207a$var$_batch.timeline : animation;
+        }
+    }
+    props && ($9c015c045583207a$var$_memoizedProps[props] || $9c015c045583207a$var$_memoizeProps(props)).forEach(function(p) {
+        return tweenVars[p] = function(i) {
+            return comps[i].a.props[p];
+        };
+    });
+    comps.finalStates = finalStates = [];
+    run = function run() {
+        $9c015c045583207a$var$_orderByDOMDepth(comps);
+        $9c015c045583207a$var$_lockBodyScroll(true); // otherwise, measurements may get thrown off when things get fit.
+        // TODO: cache the matrix, especially for parent because it'll probably get reused quite a bit, but lock it to a particular cycle(?).
+        for(i = 0; i < comps.length; i++){
+            comp = comps[i];
+            a = comp.a;
+            b = comp.b;
+            if (prune && !a.isDifferent(b) && !comp.entering) // only flip if things changed! Don't omit it from comps initially because that'd prevent the element from being positioned absolutely (if necessary)
+            comps.splice(i--, 1);
+            else {
+                el = comp.t;
+                nested && !(comp.sd < 0) && i && (a.matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(el, false, false, true)); // moving a parent affects the position of children
+                if (b.isVisible && a.isVisible) {
+                    if (comp.sd < 0) {
+                        // swapping OUT (swap direction of -1 is out)
+                        state = new $9c015c045583207a$var$ElementState(el, props, fromState.simple);
+                        $9c015c045583207a$var$_fit(state, a, scale, 0, 0, state);
+                        state.matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(el, false, false, true);
+                        state.css = comp.b.css;
+                        comp.a = a = state;
+                        fade && (el.style.opacity = interrupted ? b.opacity : a.opacity);
+                        stagger && swapOutTargets.push(el);
+                    } else if (comp.sd > 0 && fade) // swapping IN (swap direction of 1 is in)
+                    el.style.opacity = interrupted ? a.opacity - b.opacity : "0";
+                    $9c015c045583207a$var$_fit(a, b, scale, props);
+                } else if (b.isVisible !== a.isVisible) {
+                    // either entering or leaving (one side is invisible)
+                    if (!b.isVisible) {
+                        // entering
+                        a.isVisible && entering.push(a);
+                        comps.splice(i--, 1);
+                    } else if (!a.isVisible) {
+                        // leaving
+                        b.css = a.css;
+                        leaving.push(b);
+                        comps.splice(i--, 1);
+                        absolute && nested && $9c015c045583207a$var$_fit(a, b, scale, props);
+                    }
+                }
+                if (!scale) {
+                    el.style.maxWidth = Math.max(a.width, b.width) + "px";
+                    el.style.maxHeight = Math.max(a.height, b.height) + "px";
+                    el.style.minWidth = Math.min(a.width, b.width) + "px";
+                    el.style.minHeight = Math.min(a.height, b.height) + "px";
+                }
+                nested && toggleClass && el.classList.add(toggleClass);
+            }
+            finalStates.push(a);
+        }
+        var classTargets;
+        if (toggleClass) {
+            classTargets = finalStates.map(function(s) {
+                return s.element;
+            });
+            nested && classTargets.forEach(function(e) {
+                return e.classList.remove(toggleClass);
+            }); // there could be a delay, so don't leave the classes applied (we'll do it in a timeline callback)
+        }
+        $9c015c045583207a$var$_lockBodyScroll(false);
+        if (scale) {
+            tweenVars.scaleX = function(i) {
+                return comps[i].a.scaleX;
+            };
+            tweenVars.scaleY = function(i) {
+                return comps[i].a.scaleY;
+            };
+        } else {
+            tweenVars.width = function(i) {
+                return comps[i].a.width + "px";
+            };
+            tweenVars.height = function(i) {
+                return comps[i].a.height + "px";
+            };
+            tweenVars.autoRound = vars.autoRound || false;
+        }
+        tweenVars.x = function(i) {
+            return comps[i].a.x + "px";
+        };
+        tweenVars.y = function(i) {
+            return comps[i].a.y + "px";
+        };
+        tweenVars.rotation = function(i) {
+            return comps[i].a.rotation + (spin ? spinFunc(i, targets[i], targets) * 360 : 0);
+        };
+        tweenVars.skewX = function(i) {
+            return comps[i].a.skewX;
+        };
+        targets = comps.map(function(c) {
+            return c.t;
+        });
+        if (_zIndex || _zIndex === 0) {
+            tweenVars.modifiers = {
+                zIndex: function zIndex() {
+                    return _zIndex;
+                }
+            };
+            tweenVars.zIndex = _zIndex;
+            tweenVars.immediateRender = vars.immediateRender !== false;
+        }
+        fade && (tweenVars.opacity = function(i) {
+            return comps[i].sd < 0 ? 0 : comps[i].sd > 0 ? comps[i].a.opacity : "+=0";
+        });
+        if (swapOutTargets.length) {
+            stagger = $9c015c045583207a$var$gsap.utils.distribute(stagger);
+            var dummyArray = targets.slice(swapOutTargets.length);
+            tweenVars.stagger = function(i, el) {
+                return stagger(~swapOutTargets.indexOf(el) ? targets.indexOf(comps[i].swap.t) : i, el, dummyArray);
+            };
+        } // // for testing...
+        // gsap.delayedCall(vars.data ? 50 : 1, function() {
+        // 	animation.eventCallback("onComplete", () => _setFinalStates(comps, !clearProps));
+        // 	addFunc.call(animation, targets, tweenVars, 0).play();
+        // });
+        // return;
+        $9c015c045583207a$var$_callbacks.forEach(function(name) {
+            return vars[name] && animation.eventCallback(name, vars[name], vars[name + "Params"]);
+        }); // apply callbacks to the timeline, not tweens (because "custom" timing can make multiple tweens)
+        if (custom && targets.length) {
+            // bust out the custom properties as their own tweens so they can use different eases, durations, etc.
+            remainingProps = $9c015c045583207a$var$_copy(tweenVars, $9c015c045583207a$var$_reserved);
+            if ("scale" in custom) {
+                custom.scaleX = custom.scaleY = custom.scale;
+                delete custom.scale;
+            }
+            for(p in custom){
+                v = $9c015c045583207a$var$_copy(custom[p], $9c015c045583207a$var$_fitReserved);
+                v[p] = tweenVars[p];
+                !("duration" in v) && "duration" in tweenVars && (v.duration = tweenVars.duration);
+                v.stagger = tweenVars.stagger;
+                addFunc.call(animation, targets, v, 0);
+                delete remainingProps[p];
+            }
+        }
+        if (targets.length || leaving.length || entering.length) {
+            toggleClass && animation.add(function() {
+                return $9c015c045583207a$var$_toggleClass(classTargets, toggleClass, animation._zTime < 0 ? "remove" : "add");
+            }, 0) && !paused && $9c015c045583207a$var$_toggleClass(classTargets, toggleClass, "add");
+            targets.length && addFunc.call(animation, targets, remainingProps, 0);
+        }
+        $9c015c045583207a$var$_handleCallback(onEnter, entering, animation);
+        $9c015c045583207a$var$_handleCallback(onLeave, leaving, animation);
+        var batchTl = $9c015c045583207a$var$_batch && $9c015c045583207a$var$_batch.timeline;
+        if (batchTl) {
+            batchTl.add(animation, 0);
+            $9c015c045583207a$var$_batch._final.push(function() {
+                return $9c015c045583207a$var$_setFinalStates(comps, !clearProps);
+            });
+        }
+        endTime = animation.duration();
+        animation.call(function() {
+            var forward = animation.time() >= endTime;
+            forward && !batchTl && $9c015c045583207a$var$_setFinalStates(comps, !clearProps);
+            toggleClass && $9c015c045583207a$var$_toggleClass(classTargets, toggleClass, forward ? "remove" : "add");
+        });
+    };
+    absoluteOnLeave && (absolute = comps.filter(function(comp) {
+        return !comp.sd && !comp.a.isVisible && comp.b.isVisible;
+    }).map(function(comp) {
+        return comp.a.element;
+    }));
+    if ($9c015c045583207a$var$_batch) {
+        var _batch$_abs;
+        absolute && (_batch$_abs = $9c015c045583207a$var$_batch._abs).push.apply(_batch$_abs, $9c015c045583207a$var$_filterComps(comps, absolute));
+        $9c015c045583207a$var$_batch._run.push(run);
+    } else {
+        absolute && $9c015c045583207a$var$_makeCompsAbsolute($9c015c045583207a$var$_filterComps(comps, absolute)); // when making absolute, we must go in a very particular order so that document flow changes don't affect things. Don't make it visible if both the before and after states are invisible! There's no point, and it could make things appear visible during the flip that shouldn't be.
+        run();
+    }
+    var anim = $9c015c045583207a$var$_batch ? $9c015c045583207a$var$_batch.timeline : animation;
+    anim.revert = function() {
+        return $9c015c045583207a$var$_killFlip(anim, 1);
+    }; // a Flip timeline should behave very different when reverting - it should actually jump to the end so that styles get cleared out.
+    return anim;
+}, $9c015c045583207a$var$_interrupt = function _interrupt(tl) {
+    tl.vars.onInterrupt && tl.vars.onInterrupt.apply(tl, tl.vars.onInterruptParams || []);
+    tl.getChildren(true, false, true).forEach(_interrupt);
+}, $9c015c045583207a$var$_killFlip = function _killFlip(tl, action) {
+    // action: 0 = nothing, 1 = complete, 2 = only kill (don't complete)
+    if (tl && tl.progress() < 1 && !tl.paused()) {
+        if (action) {
+            $9c015c045583207a$var$_interrupt(tl);
+            action < 2 && tl.progress(1); // we should also kill it in case it was added to a parent timeline.
+            tl.kill();
+        }
+        return true;
+    }
+}, $9c015c045583207a$var$_createLookup = function _createLookup(state) {
+    var lookup = state.idLookup = {}, alt = state.alt = {}, elStates = state.elementStates, i = elStates.length, elState;
+    while(i--){
+        elState = elStates[i];
+        lookup[elState.id] ? alt[elState.id] = elState : lookup[elState.id] = elState;
+    }
+};
+var $9c015c045583207a$var$FlipState = /*#__PURE__*/ function() {
+    function FlipState(targets, vars, targetsAreElementStates) {
+        this.props = vars && vars.props;
+        this.simple = !!(vars && vars.simple);
+        if (targetsAreElementStates) {
+            this.targets = $9c015c045583207a$var$_elementsFromElementStates(targets);
+            this.elementStates = targets;
+            $9c015c045583207a$var$_createLookup(this);
+        } else {
+            this.targets = $9c015c045583207a$var$_toArray(targets);
+            var soft = vars && (vars.kill === false || vars.batch && !vars.kill);
+            $9c015c045583207a$var$_batch && !soft && $9c015c045583207a$var$_batch._kill.push(this);
+            this.update(soft || !!$9c015c045583207a$var$_batch); // when batching, don't force in-progress flips to their end; we need to do that AFTER all getStates() are called.
+        }
+    }
+    var _proto = FlipState.prototype;
+    _proto.update = function update(soft) {
+        var _this = this;
+        this.elementStates = this.targets.map(function(el) {
+            return new $9c015c045583207a$var$ElementState(el, _this.props, _this.simple);
+        });
+        $9c015c045583207a$var$_createLookup(this);
+        this.interrupt(soft);
+        this.recordInlineStyles();
+        return this;
+    };
+    _proto.clear = function clear() {
+        this.targets.length = this.elementStates.length = 0;
+        $9c015c045583207a$var$_createLookup(this);
+        return this;
+    };
+    _proto.fit = function fit(state, scale, nested) {
+        var elStatesInOrder = $9c015c045583207a$var$_orderByDOMDepth(this.elementStates.slice(0), false, true), toElStates = (state || this).idLookup, i = 0, fromNode, toNode;
+        for(; i < elStatesInOrder.length; i++){
+            fromNode = elStatesInOrder[i];
+            nested && (fromNode.matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(fromNode.element, false, false, true)); // moving a parent affects the position of children
+            toNode = toElStates[fromNode.id];
+            toNode && $9c015c045583207a$var$_fit(fromNode, toNode, scale, true, 0, fromNode);
+            fromNode.matrix = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(fromNode.element, false, false, true);
+        }
+        return this;
+    };
+    _proto.getProperty = function getProperty(element, property) {
+        var es = this.getElementState(element) || $9c015c045583207a$var$_emptyObj;
+        return (property in es ? es : es.props || $9c015c045583207a$var$_emptyObj)[property];
+    };
+    _proto.add = function add(state) {
+        var i = state.targets.length, lookup = this.idLookup, alt = this.alt, index, es, es2;
+        while(i--){
+            es = state.elementStates[i];
+            es2 = lookup[es.id];
+            if (es2 && (es.element === es2.element || alt[es.id] && alt[es.id].element === es.element)) {
+                // if the flip id is already in this FlipState, replace it!
+                index = this.elementStates.indexOf(es.element === es2.element ? es2 : alt[es.id]);
+                this.targets.splice(index, 1, state.targets[i]);
+                this.elementStates.splice(index, 1, es);
+            } else {
+                this.targets.push(state.targets[i]);
+                this.elementStates.push(es);
+            }
+        }
+        state.interrupted && (this.interrupted = true);
+        state.simple || (this.simple = false);
+        $9c015c045583207a$var$_createLookup(this);
+        return this;
+    };
+    _proto.compare = function compare(state) {
+        var l1 = state.idLookup, l2 = this.idLookup, unchanged = [], changed = [], enter = [], leave = [], targets = [], a1 = state.alt, a2 = this.alt, place = function place(s1, s2, el) {
+            return (s1.isVisible !== s2.isVisible ? s1.isVisible ? enter : leave : s1.isVisible ? changed : unchanged).push(el) && targets.push(el);
+        }, placeIfDoesNotExist = function placeIfDoesNotExist(s1, s2, el) {
+            return targets.indexOf(el) < 0 && place(s1, s2, el);
+        }, s1, s2, p, el, s1Alt, s2Alt, c1, c2;
+        for(p in l1){
+            s1Alt = a1[p];
+            s2Alt = a2[p];
+            s1 = !s1Alt ? l1[p] : $9c015c045583207a$var$_getChangingElState(state, this, p);
+            el = s1.element;
+            s2 = l2[p];
+            if (s2Alt) {
+                c2 = s2.isVisible || !s2Alt.isVisible && el === s2.element ? s2 : s2Alt;
+                c1 = s1Alt && !s1.isVisible && !s1Alt.isVisible && c2.element === s1Alt.element ? s1Alt : s1; //c1.element !== c2.element && c1.element === s2.element && (c2 = s2);
+                if (c1.isVisible && c2.isVisible && c1.element !== c2.element) {
+                    // swapping, so force into "changed" array
+                    (c1.isDifferent(c2) ? changed : unchanged).push(c1.element, c2.element);
+                    targets.push(c1.element, c2.element);
+                } else place(c1, c2, c1.element);
+                s1Alt && c1.element === s1Alt.element && (s1Alt = l1[p]);
+                placeIfDoesNotExist(c1.element !== s2.element && s1Alt ? s1Alt : c1, s2, s2.element);
+                placeIfDoesNotExist(s1Alt && s1Alt.element === s2Alt.element ? s1Alt : c1, s2Alt, s2Alt.element);
+                s1Alt && placeIfDoesNotExist(s1Alt, s2Alt.element === s1Alt.element ? s2Alt : s2, s1Alt.element);
+            } else {
+                !s2 ? enter.push(el) : !s2.isDifferent(s1) ? unchanged.push(el) : place(s1, s2, el);
+                s1Alt && placeIfDoesNotExist(s1Alt, s2, s1Alt.element);
+            }
+        }
+        for(p in l2)if (!l1[p]) {
+            leave.push(l2[p].element);
+            a2[p] && leave.push(a2[p].element);
+        }
+        return {
+            changed: changed,
+            unchanged: unchanged,
+            enter: enter,
+            leave: leave
+        };
+    };
+    _proto.recordInlineStyles = function recordInlineStyles() {
+        var props = $9c015c045583207a$var$_memoizedRemoveProps[this.props] || $9c015c045583207a$var$_removeProps, i = this.elementStates.length;
+        while(i--)$9c015c045583207a$var$_recordInlineStyles(this.elementStates[i], props);
+    };
+    _proto.interrupt = function interrupt(soft) {
+        var _this2 = this;
+        // soft = DON'T force in-progress flip animations to completion (like when running a batch, we can't immediately kill flips when getting states because it could contaminate positioning and other .getState() calls that will run in the batch (we kill AFTER all the .getState() calls complete).
+        var timelines = [];
+        this.targets.forEach(function(t) {
+            var tl = t._flip, foundInProgress = $9c015c045583207a$var$_killFlip(tl, soft ? 0 : 1);
+            soft && foundInProgress && timelines.indexOf(tl) < 0 && tl.add(function() {
+                return _this2.updateVisibility();
+            });
+            foundInProgress && timelines.push(tl);
+        });
+        !soft && timelines.length && this.updateVisibility(); // if we found an in-progress Flip animation, we must record all the values in their current state at that point BUT we should update the isVisible value AFTER pushing that flip to completion so that elements that are entering or leaving will populate those Arrays properly.
+        this.interrupted || (this.interrupted = !!timelines.length);
+    };
+    _proto.updateVisibility = function updateVisibility() {
+        this.elementStates.forEach(function(es) {
+            var b = es.element.getBoundingClientRect();
+            es.isVisible = !!(b.width || b.height || b.top || b.left);
+            es.uncache = 1;
+        });
+    };
+    _proto.getElementState = function getElementState(element) {
+        return this.elementStates[this.targets.indexOf($9c015c045583207a$var$_getEl(element))];
+    };
+    _proto.makeAbsolute = function makeAbsolute() {
+        return $9c015c045583207a$var$_orderByDOMDepth(this.elementStates.slice(0), true, true).map($9c015c045583207a$var$_makeAbsolute);
+    };
+    return FlipState;
+}();
+var $9c015c045583207a$var$ElementState = /*#__PURE__*/ function() {
+    function ElementState(element, props, simple) {
+        this.element = element;
+        this.update(props, simple);
+    }
+    var _proto2 = ElementState.prototype;
+    _proto2.isDifferent = function isDifferent(state) {
+        var b1 = this.bounds, b2 = state.bounds;
+        return b1.top !== b2.top || b1.left !== b2.left || b1.width !== b2.width || b1.height !== b2.height || !this.matrix.equals(state.matrix) || this.opacity !== state.opacity || this.props && state.props && JSON.stringify(this.props) !== JSON.stringify(state.props);
+    };
+    _proto2.update = function update(props, simple) {
+        var self = this, element = self.element, getProp = $9c015c045583207a$var$gsap.getProperty(element), cache = $9c015c045583207a$var$gsap.core.getCache(element), bounds = element.getBoundingClientRect(), bbox = element.getBBox && typeof element.getBBox === "function" && element.nodeName.toLowerCase() !== "svg" && element.getBBox(), m = simple ? new (0, $ee81c47409f69c0e$export$26e6ecd136a15474)(1, 0, 0, 1, bounds.left + (0, $ee81c47409f69c0e$export$cf8963d945186253)(), bounds.top + (0, $ee81c47409f69c0e$export$ffd2ae2432b6e61c)()) : (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(element, false, false, true);
+        self.getProp = getProp;
+        self.element = element;
+        self.id = $9c015c045583207a$var$_getID(element);
+        self.matrix = m;
+        self.cache = cache;
+        self.bounds = bounds;
+        self.isVisible = !!(bounds.width || bounds.height || bounds.left || bounds.top);
+        self.display = getProp("display");
+        self.position = getProp("position");
+        self.parent = element.parentNode;
+        self.x = getProp("x");
+        self.y = getProp("y");
+        self.scaleX = cache.scaleX;
+        self.scaleY = cache.scaleY;
+        self.rotation = getProp("rotation");
+        self.skewX = getProp("skewX");
+        self.opacity = getProp("opacity");
+        self.width = bbox ? bbox.width : $9c015c045583207a$var$_closestTenth(getProp("width", "px"), 0.04); // round up to the closest 0.1 so that text doesn't wrap.
+        self.height = bbox ? bbox.height : $9c015c045583207a$var$_closestTenth(getProp("height", "px"), 0.04);
+        props && $9c015c045583207a$var$_recordProps(self, $9c015c045583207a$var$_memoizedProps[props] || $9c015c045583207a$var$_memoizeProps(props));
+        self.ctm = element.getCTM && element.nodeName.toLowerCase() === "svg" && (0, $ee81c47409f69c0e$export$a2b87f76ca5ccbd0)(element).inverse();
+        self.simple = simple || $9c015c045583207a$var$_round(m.a) === 1 && !$9c015c045583207a$var$_round(m.b) && !$9c015c045583207a$var$_round(m.c) && $9c015c045583207a$var$_round(m.d) === 1; // allows us to speed through some other tasks if it's not scale/rotated
+        self.uncache = 0;
+    };
+    return ElementState;
+}();
+var $9c015c045583207a$var$FlipAction = /*#__PURE__*/ function() {
+    function FlipAction(vars, batch) {
+        this.vars = vars;
+        this.batch = batch;
+        this.states = [];
+        this.timeline = batch.timeline;
+    }
+    var _proto3 = FlipAction.prototype;
+    _proto3.getStateById = function getStateById(id) {
+        var i = this.states.length;
+        while(i--){
+            if (this.states[i].idLookup[id]) return this.states[i];
+        }
+    };
+    _proto3.kill = function kill() {
+        this.batch.remove(this);
+    };
+    return FlipAction;
+}();
+var $9c015c045583207a$var$FlipBatch = /*#__PURE__*/ function() {
+    function FlipBatch(id) {
+        this.id = id;
+        this.actions = [];
+        this._kill = [];
+        this._final = [];
+        this._abs = [];
+        this._run = [];
+        this.data = {};
+        this.state = new $9c015c045583207a$var$FlipState();
+        this.timeline = $9c015c045583207a$var$gsap.timeline();
+    }
+    var _proto4 = FlipBatch.prototype;
+    _proto4.add = function add(config) {
+        var result = this.actions.filter(function(action) {
+            return action.vars === config;
+        });
+        if (result.length) return result[0];
+        result = new $9c015c045583207a$var$FlipAction(typeof config === "function" ? {
+            animate: config
+        } : config, this);
+        this.actions.push(result);
+        return result;
+    };
+    _proto4.remove = function remove(action) {
+        var i = this.actions.indexOf(action);
+        i >= 0 && this.actions.splice(i, 1);
+        return this;
+    };
+    _proto4.getState = function getState(merge) {
+        var _this3 = this;
+        var prevBatch = $9c015c045583207a$var$_batch, prevAction = $9c015c045583207a$var$_batchAction;
+        $9c015c045583207a$var$_batch = this;
+        this.state.clear();
+        this._kill.length = 0;
+        this.actions.forEach(function(action) {
+            if (action.vars.getState) {
+                action.states.length = 0;
+                $9c015c045583207a$var$_batchAction = action;
+                action.state = action.vars.getState(action);
+            }
+            merge && action.states.forEach(function(s) {
+                return _this3.state.add(s);
+            });
+        });
+        $9c015c045583207a$var$_batchAction = prevAction;
+        $9c015c045583207a$var$_batch = prevBatch;
+        this.killConflicts();
+        return this;
+    };
+    _proto4.animate = function animate() {
+        var _this4 = this;
+        var prevBatch = $9c015c045583207a$var$_batch, tl = this.timeline, i = this.actions.length, finalStates, endTime;
+        $9c015c045583207a$var$_batch = this;
+        tl.clear();
+        this._abs.length = this._final.length = this._run.length = 0;
+        this.actions.forEach(function(a) {
+            a.vars.animate && a.vars.animate(a);
+            var onEnter = a.vars.onEnter, onLeave = a.vars.onLeave, targets = a.targets, s, result;
+            if (targets && targets.length && (onEnter || onLeave)) {
+                s = new $9c015c045583207a$var$FlipState();
+                a.states.forEach(function(state) {
+                    return s.add(state);
+                });
+                result = s.compare($9c015c045583207a$export$4d2fae537bd90431.getState(targets));
+                result.enter.length && onEnter && onEnter(result.enter);
+                result.leave.length && onLeave && onLeave(result.leave);
+            }
+        });
+        $9c015c045583207a$var$_makeCompsAbsolute(this._abs);
+        this._run.forEach(function(f) {
+            return f();
+        });
+        endTime = tl.duration();
+        finalStates = this._final.slice(0);
+        tl.add(function() {
+            if (endTime <= tl.time()) {
+                // only call if moving forward in the timeline (in case it's nested in a timeline that gets reversed)
+                finalStates.forEach(function(f) {
+                    return f();
+                });
+                $9c015c045583207a$var$_forEachBatch(_this4, "onComplete");
+            }
+        });
+        $9c015c045583207a$var$_batch = prevBatch;
+        while(i--)this.actions[i].vars.once && this.actions[i].kill();
+        $9c015c045583207a$var$_forEachBatch(this, "onStart");
+        tl.restart();
+        return this;
+    };
+    _proto4.loadState = function loadState(done) {
+        done || (done = function done() {
+            return 0;
+        });
+        var queue = [];
+        this.actions.forEach(function(c) {
+            if (c.vars.loadState) {
+                var i, f = function f(targets) {
+                    targets && (c.targets = targets);
+                    i = queue.indexOf(f);
+                    if (~i) {
+                        queue.splice(i, 1);
+                        queue.length || done();
+                    }
+                };
+                queue.push(f);
+                c.vars.loadState(f);
+            }
+        });
+        queue.length || done();
+        return this;
+    };
+    _proto4.setState = function setState() {
+        this.actions.forEach(function(c) {
+            return c.targets = c.vars.setState && c.vars.setState(c);
+        });
+        return this;
+    };
+    _proto4.killConflicts = function killConflicts(soft) {
+        this.state.interrupt(soft);
+        this._kill.forEach(function(state) {
+            return state.interrupt(soft);
+        });
+        return this;
+    };
+    _proto4.run = function run(skipGetState, merge) {
+        var _this5 = this;
+        if (this !== $9c015c045583207a$var$_batch) {
+            skipGetState || this.getState(merge);
+            this.loadState(function() {
+                if (!_this5._killed) {
+                    _this5.setState();
+                    _this5.animate();
+                }
+            });
+        }
+        return this;
+    };
+    _proto4.clear = function clear(stateOnly) {
+        this.state.clear();
+        stateOnly || (this.actions.length = 0);
+    };
+    _proto4.getStateById = function getStateById(id) {
+        var i = this.actions.length, s;
+        while(i--){
+            s = this.actions[i].getStateById(id);
+            if (s) return s;
+        }
+        return this.state.idLookup[id] && this.state;
+    };
+    _proto4.kill = function kill() {
+        this._killed = 1;
+        this.clear();
+        delete $9c015c045583207a$var$_batchLookup[this.id];
+    };
+    return FlipBatch;
+}();
+var $9c015c045583207a$export$4d2fae537bd90431 = /*#__PURE__*/ function() {
+    function Flip() {}
+    Flip.getState = function getState(targets, vars) {
+        var state = $9c015c045583207a$var$_parseState(targets, vars);
+        $9c015c045583207a$var$_batchAction && $9c015c045583207a$var$_batchAction.states.push(state);
+        vars && vars.batch && Flip.batch(vars.batch).state.add(state);
+        return state;
+    };
+    Flip.from = function from(state, vars) {
+        vars = vars || {};
+        "clearProps" in vars || (vars.clearProps = true);
+        return $9c015c045583207a$var$_fromTo(state, $9c015c045583207a$var$_parseState(vars.targets || state.targets, {
+            props: vars.props || state.props,
+            simple: vars.simple,
+            kill: !!vars.kill
+        }), vars, -1);
+    };
+    Flip.to = function to(state, vars) {
+        return $9c015c045583207a$var$_fromTo(state, $9c015c045583207a$var$_parseState(vars.targets || state.targets, {
+            props: vars.props || state.props,
+            simple: vars.simple,
+            kill: !!vars.kill
+        }), vars, 1);
+    };
+    Flip.fromTo = function fromTo(fromState, toState, vars) {
+        return $9c015c045583207a$var$_fromTo(fromState, toState, vars);
+    };
+    Flip.fit = function fit(fromEl, toEl, vars) {
+        var v = vars ? $9c015c045583207a$var$_copy(vars, $9c015c045583207a$var$_fitReserved) : {}, _ref = vars || v, absolute = _ref.absolute, scale = _ref.scale, getVars = _ref.getVars, props = _ref.props, runBackwards = _ref.runBackwards, onComplete = _ref.onComplete, simple = _ref.simple, fitChild = vars && vars.fitChild && $9c015c045583207a$var$_getEl(vars.fitChild), before = $9c015c045583207a$var$_parseElementState(toEl, props, simple, fromEl), after = $9c015c045583207a$var$_parseElementState(fromEl, 0, simple, before), inlineProps = props ? $9c015c045583207a$var$_memoizedRemoveProps[props] : $9c015c045583207a$var$_removeProps;
+        props && $9c015c045583207a$var$_applyProps(v, before.props);
+        if (runBackwards) {
+            $9c015c045583207a$var$_recordInlineStyles(after, inlineProps);
+            "immediateRender" in v || (v.immediateRender = true);
+            v.onComplete = function() {
+                $9c015c045583207a$var$_applyInlineStyles(after);
+                onComplete && onComplete.apply(this, arguments);
+            };
+        }
+        absolute && $9c015c045583207a$var$_makeAbsolute(after, before);
+        v = $9c015c045583207a$var$_fit(after, before, scale || fitChild, props, fitChild, v.duration || getVars ? v : 0);
+        return getVars ? v : v.duration ? $9c015c045583207a$var$gsap.to(after.element, v) : null;
+    };
+    Flip.makeAbsolute = function makeAbsolute(targetsOrStates, vars) {
+        return (targetsOrStates instanceof $9c015c045583207a$var$FlipState ? targetsOrStates : new $9c015c045583207a$var$FlipState(targetsOrStates, vars)).makeAbsolute();
+    };
+    Flip.batch = function batch(id) {
+        id || (id = "default");
+        return $9c015c045583207a$var$_batchLookup[id] || ($9c015c045583207a$var$_batchLookup[id] = new $9c015c045583207a$var$FlipBatch(id));
+    };
+    Flip.killFlipsOf = function killFlipsOf(targets, complete) {
+        (targets instanceof $9c015c045583207a$var$FlipState ? targets.targets : $9c015c045583207a$var$_toArray(targets)).forEach(function(t) {
+            return t && $9c015c045583207a$var$_killFlip(t._flip, complete !== false ? 1 : 2);
+        });
+    };
+    Flip.isFlipping = function isFlipping(target) {
+        var f = Flip.getByTarget(target);
+        return !!f && f.isActive();
+    };
+    Flip.getByTarget = function getByTarget(target) {
+        return ($9c015c045583207a$var$_getEl(target) || $9c015c045583207a$var$_emptyObj)._flip;
+    };
+    Flip.getElementState = function getElementState(target, props) {
+        return new $9c015c045583207a$var$ElementState($9c015c045583207a$var$_getEl(target), props);
+    };
+    Flip.convertCoordinates = function convertCoordinates(fromElement, toElement, point) {
+        var m = (0, $ee81c47409f69c0e$export$91a495f99cf781b7)(toElement, true, true).multiply((0, $ee81c47409f69c0e$export$91a495f99cf781b7)(fromElement));
+        return point ? m.apply(point) : m;
+    };
+    Flip.register = function register(core) {
+        $9c015c045583207a$var$_body = typeof document !== "undefined" && document.body;
+        if ($9c015c045583207a$var$_body) {
+            $9c015c045583207a$var$gsap = core;
+            (0, $ee81c47409f69c0e$export$33c547c3e20d49b1)($9c015c045583207a$var$_body);
+            $9c015c045583207a$var$_toArray = $9c015c045583207a$var$gsap.utils.toArray;
+            var snap = $9c015c045583207a$var$gsap.utils.snap(0.1);
+            $9c015c045583207a$var$_closestTenth = function _closestTenth(value, add) {
+                return snap(parseFloat(value) + add);
+            };
+        }
+    };
+    return Flip;
+}();
+$9c015c045583207a$export$4d2fae537bd90431.version = "3.11.2"; // function whenImagesLoad(el, func) {
+// 	let pending = [],
+// 		onLoad = e => {
+// 			pending.splice(pending.indexOf(e.target), 1);
+// 			e.target.removeEventListener("load", onLoad);
+// 			pending.length || func();
+// 		};
+// 	gsap.utils.toArray(el.tagName.toLowerCase() === "img" ? el : el.querySelectorAll("img")).forEach(img => img.complete || img.addEventListener("load", onLoad) || pending.push(img));
+// 	pending.length || func();
+// }
+typeof window !== "undefined" && window.gsap && window.gsap.registerPlugin($9c015c045583207a$export$4d2fae537bd90431);
+
+
+(0, $f5d6dc3e2355e925$export$99ee26438460406a).registerPlugin((0, $9c015c045583207a$export$4d2fae537bd90431));
+// trail elements (Image and the two intro title elements (up and down)
+const $db2d7e24a7ff6575$var$trailImage = new (0, $a8fca88873a386d6$export$c3ddc7f2aba2c1ae)(document.querySelector(".intro-image"), {
+    perspective: 1000,
+    totalTrailElements: 8
+});
+const $db2d7e24a7ff6575$var$trailTextTop = new (0, $a8fca88873a386d6$export$c42441291b8467f9)(document.querySelector(".intro-content__title--up"), {
+    perspective: 1000,
+    totalTrailElements: 2
+});
+const $db2d7e24a7ff6575$var$trailTextBottom = new (0, $a8fca88873a386d6$export$c42441291b8467f9)(document.querySelector(".intro-content__title--down"), {
+    totalTrailElements: 3
+});
+// DOM elements
+const $db2d7e24a7ff6575$var$frame = {
+    menu: document.querySelector(".button-menu"),
+    logo: document.querySelector(".logo"),
+    progress: document.querySelector(".intro-progress")
+};
+const $db2d7e24a7ff6575$var$intro = {
+    image: document.querySelector(".intro-content__image"),
+    enterButton: document.querySelector(".button-enter")
+};
+const $db2d7e24a7ff6575$var$content = {
+    titleTop: document.querySelector(".content__title--up"),
+    titleBottom: document.querySelector(".content__title--down"),
+    about: document.querySelector(".content__about"),
+    aboutText: document.querySelector(".content__about-text"),
+    finalImagePlacement: document.querySelector(".content__image--2"),
+    otherImages: document.querySelectorAll(".content__image--1 > .content__image-inner, .content__image--3 > .content__image-inner")
+};
+// the TextLinesReveal instance (animate each text line of the about text using the SplitText library)
+const $db2d7e24a7ff6575$var$aboutLines = new (0, $400472c332900f01$export$8d6dee1bc13078fb)($db2d7e24a7ff6575$var$content.aboutText);
+// state
+let $db2d7e24a7ff6575$var$state = {
+    isAnimating: false,
+    iscontentOpen: false
+};
+// First step: fake progress and move the image to the center of the screen. Also animate the top/bottom texts in and show the enter button
+const $db2d7e24a7ff6575$var$showIntro = ()=>{
+    if ($db2d7e24a7ff6575$var$state.isAnimating) return false;
+    $db2d7e24a7ff6575$var$state.isAnimating = true;
+    (0, $f5d6dc3e2355e925$export$99ee26438460406a).timeline({
+        defaults: (0, $9d00bec76b14e914$export$db69c10dea599f),
+        onComplete: ()=>{
+            // Reset the trails structure on the texts and image
+            $db2d7e24a7ff6575$var$trailTextTop.reset();
+            $db2d7e24a7ff6575$var$trailTextBottom.reset();
+            $db2d7e24a7ff6575$var$trailImage.reset();
+            $db2d7e24a7ff6575$var$state.isAnimating = false;
+        }
+    }).addLabel("start", 0).add(()=>{
+        // Let's use the gsap Flip plugin to animate the image into a new element (.intro-content__image)
+        // Get state
+        const state = (0, $9c015c045583207a$export$4d2fae537bd90431).getState($db2d7e24a7ff6575$var$trailImage.DOM.trailElems);
+        // Change place
+        $db2d7e24a7ff6575$var$intro.image.appendChild($db2d7e24a7ff6575$var$trailImage.DOM.el);
+        // Flip
+        (0, $9c015c045583207a$export$4d2fae537bd90431).from(state, {
+            duration: (0, $9d00bec76b14e914$export$db69c10dea599f).duration,
+            ease: (0, $9d00bec76b14e914$export$db69c10dea599f).ease,
+            stagger: -0.03,
+            scale: true
+        });
+    }, "start")// Hide the intro title trail elements initially and show its parents which are hidden by default (CSS)
+    .set([
+        $db2d7e24a7ff6575$var$trailTextTop.DOM.trailElems,
+        $db2d7e24a7ff6575$var$trailTextBottom.DOM.trailElems
+    ], {
+        opacity: 0
+    }, "start").set([
+        $db2d7e24a7ff6575$var$trailTextTop.DOM.el,
+        $db2d7e24a7ff6575$var$trailTextBottom.DOM.el
+    ], {
+        opacity: 1
+    }, "start")// Now translate the title elements
+    .to($db2d7e24a7ff6575$var$trailTextTop.DOM.trailElems, {
+        y: 0,
+        startAt: {
+            rotateY: 160,
+            opacity: 0
+        },
+        rotateY: 0,
+        opacity: 1,
+        stagger: -0.1
+    }, "start").to($db2d7e24a7ff6575$var$trailTextBottom.DOM.trailElems, {
+        y: 0,
+        opacity: 1,
+        stagger: -0.08
+    }, "start")// And show the intro enter button
+    .to($db2d7e24a7ff6575$var$intro.enterButton, {
+        startAt: {
+            opacity: 0,
+            scale: 0.8
+        },
+        opacity: 1,
+        scale: 1
+    }, "start+=0.3").add(()=>{
+        // Show the logo and menu button 
+        $db2d7e24a7ff6575$var$frame.menu.classList.add("show");
+        $db2d7e24a7ff6575$var$frame.logo.classList.add("show");
+    }, "start+=0.3");
+};
+// Second step: show the other images and scale down the texts
+const $db2d7e24a7ff6575$var$showContent = ()=>{
+    if ($db2d7e24a7ff6575$var$state.isAnimating || $db2d7e24a7ff6575$var$state.iscontentOpen) return false;
+    $db2d7e24a7ff6575$var$state.isAnimating = true;
+    $db2d7e24a7ff6575$var$state.iscontentOpen = true;
+    (0, $f5d6dc3e2355e925$export$99ee26438460406a).timeline({
+        defaults: (0, $9d00bec76b14e914$export$db69c10dea599f),
+        onComplete: ()=>{
+            $db2d7e24a7ff6575$var$state.isAnimating = false;
+        }
+    }).addLabel("start", 0).to($db2d7e24a7ff6575$var$intro.enterButton, {
+        duration: 0.6,
+        opacity: 0,
+        scale: 0.8
+    }, "start").add(()=>{
+        const topTitleState = (0, $9c015c045583207a$export$4d2fae537bd90431).getState($db2d7e24a7ff6575$var$trailTextTop.DOM.el);
+        const bottomTitleState = (0, $9c015c045583207a$export$4d2fae537bd90431).getState($db2d7e24a7ff6575$var$trailTextBottom.DOM.el);
+        $db2d7e24a7ff6575$var$content.titleTop.appendChild($db2d7e24a7ff6575$var$trailTextTop.DOM.el);
+        $db2d7e24a7ff6575$var$content.titleBottom.appendChild($db2d7e24a7ff6575$var$trailTextBottom.DOM.el);
+        (0, $9c015c045583207a$export$4d2fae537bd90431).from(topTitleState, {
+            duration: (0, $9d00bec76b14e914$export$db69c10dea599f).duration,
+            ease: (0, $9d00bec76b14e914$export$db69c10dea599f).ease,
+            scale: true
+        });
+        (0, $9c015c045583207a$export$4d2fae537bd90431).from(bottomTitleState, {
+            duration: (0, $9d00bec76b14e914$export$db69c10dea599f).duration,
+            ease: (0, $9d00bec76b14e914$export$db69c10dea599f).ease,
+            scale: true
+        });
+        const imageState = (0, $9c015c045583207a$export$4d2fae537bd90431).getState($db2d7e24a7ff6575$var$trailImage.DOM.el, {
+            props: "border-radius"
+        });
+        // Change place
+        $db2d7e24a7ff6575$var$content.finalImagePlacement.appendChild($db2d7e24a7ff6575$var$trailImage.DOM.el);
+        (0, $f5d6dc3e2355e925$export$99ee26438460406a).set($db2d7e24a7ff6575$var$trailImage.DOM.el, {
+            opacity: 1
+        });
+        // Flip
+        (0, $9c015c045583207a$export$4d2fae537bd90431).from(imageState, {
+            duration: (0, $9d00bec76b14e914$export$db69c10dea599f).duration,
+            ease: (0, $9d00bec76b14e914$export$db69c10dea599f).ease
+        });
+    }, "start")// animate the other images in
+    .to($db2d7e24a7ff6575$var$content.otherImages, {
+        startAt: {
+            yPercent: 100
+        },
+        yPercent: 0,
+        opacity: 1
+    }, "start+=0.1")// about section
+    .to($db2d7e24a7ff6575$var$content.about, {
+        startAt: {
+            yPercent: 10
+        },
+        yPercent: 0,
+        opacity: 1
+    }, "start+=0.2")// about text lines
+    .add(()=>{
+        $db2d7e24a7ff6575$var$aboutLines.in();
+    }, "start+=0.2");
+};
+// Enter button click event
+$db2d7e24a7ff6575$var$intro.enterButton.addEventListener("click", $db2d7e24a7ff6575$var$showContent);
+// Simulate the initial progress
+const $db2d7e24a7ff6575$var$fakeProgress = new (0, $df23c5cc32457ab3$export$fed190818166dddb)($db2d7e24a7ff6575$var$frame.progress);
+$db2d7e24a7ff6575$var$fakeProgress.onComplete($db2d7e24a7ff6575$var$showIntro);
+// Preload images
+(0, $8735ef69aff6d3c8$export$6b05b21262ec0515)(".intro-image").then((_)=>document.body.classList.remove("loading"));
+
+
